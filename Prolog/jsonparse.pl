@@ -10,7 +10,7 @@ json(O) --> element(O).
 value(I) --> obj(I).
 value(I) --> array(I).
 value(I) --> string(I).
-%value(I) --> json_number(I).
+value(I) --> json_number(I).
 value(true) --> "true".
 value(false) --> "false".
 value(null) --> "null".
@@ -34,9 +34,49 @@ element(O) --> ws, value(I), ws , {O = I}.
 
 string(I) --> "\"", characters([], O) , "\"", !, {string_codes(I,O)},{print(I)},{nl}.
 
-%json_number(_O) --> [].
 
-%% ricordati di cambiarlo
+json_number(O) --> json_integer(Ii), json_fraction(If), json_exponent(Ie),
+		   {atom_concat(Ii, If, Is)}, {atom_concat(Is, Ie, I)},
+		   {atom_number(I,O)}.
+
+%json_number(O) --> json_integer(I), {atom_number(I,O)}.
+
+
+json_integer(O) --> json_one_nine(I), json_digits(Is), {atom_concat(I, Is, O)}.
+json_integer(O) --> "-", json_one_nine(I), json_digits(Is), {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
+json_integer(O) --> json_digit(O).
+json_integer(O) --> "-", json_digit(I), {append(["-"], I, O)}.
+
+
+json_digits(O) --> json_digit(I), {print("bela")}, json_digits(Is), !, {atom_concat(I, Is, O)}.
+json_digits(O) --> json_digit(I), {O = I}.
+
+json_digit('0') --> "0", !.
+json_digit(O) --> json_one_nine(I), {O = I}.
+
+json_one_nine(No) --> [N], {N > 48, N < 58}, {print("ciao")}, {No is N - 48},{print(No)} .
+
+
+json_fraction(O) --> ".", json_digits(I), {atom_concat(.,I,O)}.
+json_fraction('') --> [].
+
+json_exponent(O) --> "E", json_sign(I), json_digits(Is),
+		     {atom_concat('E',I,Ii)}, {atom_concat(Ii,Is,O)}.
+json_exponent(O) --> "e", json_sign(I), json_digits(Is),
+		     {atom_concat('e',I,Ii)}, {atom_concat(Ii,Is,O)}.
+json_exponent('') --> [].
+
+
+json_sign('+') --> "+".
+json_sign('-') --> "-".
+json_sign('') --> [].
+
+ricordati di cambiarlo
+
+characters(A, Out) -->
+	["\\", "u"], !, hex(I1) ,hex(I2), hex(I3), hex(I4),
+	characters([I4, I3, I2, I1, "u", "\\" | A], Out).
+
 characters(A, Out) -->
 	["\\", Chr],
 	characters([Chr, "\\" | A], Out).
@@ -48,6 +88,12 @@ characters(A, Out) -->
 characters(A, Out) -->
     [],
     {reverse(A, Out)}, !.
+
+
+%%% controllo esplicito del hex anche se da alcune prove sembra che prolog faccia da solo con le strighe
+hex(O) --> digit(I),{atom_string(I,O)}.
+hex(H) --> [H], {H > 64, H < 71}.
+hex(H) --> [H], {H > 96, H < 103}.
 
 json_parse(JSONString, Object) :-
     string(JSONString),
@@ -62,3 +108,4 @@ json_parse(JSONAtom, Object) :-
     print(Object).
 
 %%% json_parse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
+%%% json_parse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
