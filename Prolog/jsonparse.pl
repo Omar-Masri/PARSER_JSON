@@ -333,3 +333,12 @@ access_array([E | _], 0, E) :- !.
 access_array([_ | Elements], N, Out) :-
     N1 is N - 1,
     access_array(Elements, N1, Out).
+
+%%input e output
+%%jsonread
+%%jsonread(FileName, JSON)
+jsonread(FileName, JSONObj) :-
+    open(FileName, read, In),
+    read_string(In, _, JSON),
+    close(In),
+    jsonparse(JSON, JSONObj).

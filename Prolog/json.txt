@@ -1,0 +1,5 @@
+{
+"sasso":{ "flauto": [1,2.3,"bau", 3]},
+"dente": "oro",
+"dente": "argento"
+}
