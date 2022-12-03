@@ -24,7 +24,8 @@ json_ws -->
 % Defines json nonterminal
 % as per definition found in the http://json.org
 
-json(O) --> json_element(O).
+json(O) -->
+    json_element(O).
 
 
 %% json_value/1
@@ -54,13 +55,13 @@ json_value(null) --> "null".
 
 json_obj(O) -->
     "{", json_ws, "}", !,
-    {O = jsonobj([])}.
+    { O = jsonobj([]) }.
 
 json_obj(O) -->
     "{",
     json_ws, json_members(I), json_ws,
     "}",
-    {O = jsonobj(I)}.
+    { O = jsonobj(I) }.
 
 
 %% json_members/1
@@ -78,7 +79,7 @@ json_members(O) -->
     json_member(I),
     ",",
     json_members(Is),
-    {append(I, Is, O)}.
+    { append(I, Is, O) }.
 
 json_members(O) -->
     json_member(O).
@@ -93,7 +94,15 @@ json_members(O) -->
 % where the tuple has as the first item what is returned by string
 % and as the second what is returned by value
 
-json_member(O) --> json_ws, json_string(I), json_ws, ":" , json_ws, json_value(Iv), json_ws, !, {O = [(I,Iv)]}.
+json_member(O) -->
+    json_ws,
+    json_string(I),
+    json_ws,
+    ":",
+    json_ws,
+    json_value(Iv),
+    json_ws, !,
+    { O = [(I,Iv)] }.
 
 
 %% json_array/1
@@ -105,8 +114,17 @@ json_member(O) --> json_ws, json_string(I), json_ws, ":" , json_ws, json_value(I
 % and parses by returning either the predicate
 % jsonarray([]) or jsonarray(I)
 
-json_array(O) --> "[", json_ws, "]", !, {O = jsonarray([])}.
-json_array(O) --> "[", json_ws, json_elements(I), json_ws, "]", {O = jsonarray(I)}.
+json_array(O) -->
+    "[", json_ws, "]", !,
+    { O = jsonarray([]) }.
+
+json_array(O) -->
+    "[",
+    json_ws,
+    json_elements(I),
+    json_ws,
+    "]",
+    { O = jsonarray(I) }.
 
 
 %% json_elements/1
@@ -120,8 +138,15 @@ json_array(O) --> "[", json_ws, json_elements(I), json_ws, "]", {O = jsonarray(I
 % returns an array with the output of member inside of it
 % if it's of the 1) form
 
-json_elements(O) --> json_element(I), ",", json_elements(Is), !, {append([I], Is, O)}.
-json_elements(O) --> json_element(I), {O = [I]}.
+json_elements(O) -->
+    json_element(I),
+    ",",
+    json_elements(Is), !,
+    { append([I], Is, O) }.
+
+json_elements(O) -->
+    json_element(I),
+    { O = [I] }.
 
 
 %% json_element/1
@@ -131,7 +156,10 @@ json_elements(O) --> json_element(I), {O = [I]}.
 % 1) ws value ws
 % and parses by returning directly the output of value 
 
-json_element(O) --> json_ws, json_value(I), json_ws , {O = I}.
+json_element(O) -->
+    json_ws,
+    json_value(O),
+    json_ws.
 
 
 %% json_string/1
@@ -142,7 +170,11 @@ json_element(O) --> json_ws, json_value(I), json_ws , {O = I}.
 % and parses by getting the output of charachter
 % and transforming it to a string
 
-json_string(O) --> "\"", characters([], I) , "\"", !, {string_codes(O,I)},{print(O)},{nl}.
+json_string(O) -->
+    "\"",
+    characters([], I),
+    "\"", !,
+    { string_codes(O, I) },{print(O)},{nl}.
 
 
 %% json_number/1
@@ -153,9 +185,10 @@ json_string(O) --> "\"", characters([], I) , "\"", !, {string_codes(O,I)},{print
 % and parses by concatenating the output atoms from
 % integer, fraction, and exponent and trasforming it to a number
 
-json_number(O) --> json_integer(Ii), json_fraction(If), json_exponent(Ie),
-		   {atom_concat(Ii, If, Is)}, {atom_concat(Is, Ie, I)},
-		   {atom_number(I,O)}.
+json_number(O) -->
+    json_integer(Ii), json_fraction(If), json_exponent(Ie),
+    {atom_concat(Ii, If, Is)}, {atom_concat(Is, Ie, I)},
+    {atom_number(I, O)}.
 
 
 %% json_integer/1
@@ -169,10 +202,20 @@ json_number(O) --> json_integer(Ii), json_fraction(If), json_exponent(Ie),
 % and parses by concatenating the atoms retured from onenine
 % and digits and eventually adding a minus at the start
 
-json_integer(O) --> json_one_nine(I), json_digits(Is), {atom_concat(I, Is, O)}.
-json_integer(O) --> "-", json_one_nine(I), json_digits(Is), {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
-json_integer(O) --> json_digit(O).
-json_integer(O) --> "-", json_digit(I), {atom_concat(-, I, O)}.
+json_integer(O) -->
+    json_one_nine(I), json_digits(Is),
+    {atom_concat(I, Is, O)}.
+
+json_integer(O) -->
+    "-", json_one_nine(I), json_digits(Is),
+    {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
+
+json_integer(O) -->
+    json_digit(O).
+
+json_integer(O) -->
+    "-", json_digit(I),
+    { atom_concat(-, I, O) }.
 
 
 %% json_digits/1
@@ -184,8 +227,12 @@ json_integer(O) --> "-", json_digit(I), {atom_concat(-, I, O)}.
 % and parses by concatenating the atoms retured from onenine
 % and digits and eventually adding a minus at the start
 
-json_digits(O) --> json_digit(I), json_digits(Is), !, {atom_concat(I, Is, O)}.
-json_digits(O) --> json_digit(I), {O = I}.
+json_digits(O) -->
+    json_digit(I), json_digits(Is), !,
+    { atom_concat(I, Is, O) }.
+
+json_digits(O) -->
+    json_digit(O).
 
 
 %% json_digit/1
@@ -197,8 +244,11 @@ json_digits(O) --> json_digit(I), {O = I}.
 % and parses by returning the atom '0' if of the 1) form
 % or returns directly the output of onenine if of 2) form
 
-json_digit('0') --> "0", !.
-json_digit(O) --> json_one_nine(I), {O = I}.
+json_digit('0') -->
+    "0", !.
+
+json_digit(O) -->
+    json_one_nine(O).
 
 
 %% json_one_nine/1
@@ -209,7 +259,10 @@ json_digit(O) --> json_one_nine(I), {O = I}.
 % and parses by returning the number created by taking
 % the ascii value of the charachter and subtracting 48 from it
 
-json_one_nine(No) --> [N], {N > 48, N < 58}, {print("ciao")}, {No is N - 48},{print(No)} .
+json_one_nine(No) -->
+    [N],
+    { N > 48, N < 58 }, { print("ciao") },
+    { No is N - 48 }, { print(No) }.
 
 
 %% json_fraction/1
@@ -221,8 +274,11 @@ json_one_nine(No) --> [N], {N > 48, N < 58}, {print("ciao")}, {No is N - 48},{pr
 % and parses by returning either and empty atom or the
 % concatenation of '.' and the output of digits
 
-json_fraction(O) --> ".", json_digits(I), {atom_concat(.,I,O)}.
-json_fraction('') --> [].
+json_fraction(O) -->
+    ".", json_digits(I),
+    { atom_concat(., I, O) }.
+
+json_fraction('') --> [ ].
 
 
 %% json_fraction/1
@@ -235,11 +291,15 @@ json_fraction('') --> [].
 % and parses by returning either and empty atom or the
 % concatenation of 'E'/'e' , the output of sign and of digits 
 
-json_exponent(O) --> "E", json_sign(I), json_digits(Is),
-		     {atom_concat('E',I,Ii)}, {atom_concat(Ii,Is,O)}.
-json_exponent(O) --> "e", json_sign(I), json_digits(Is),
-		     {atom_concat('e',I,Ii)}, {atom_concat(Ii,Is,O)}.
-json_exponent('') --> [].
+json_exponent(O) -->
+    "E", json_sign(I), json_digits(Is),
+    { atom_concat('E', I, Ii) }, { atom_concat(Ii, Is, O) }.
+
+json_exponent(O) -->
+    "e", json_sign(I), json_digits(Is),
+    { atom_concat('e', I, Ii) }, { atom_concat(Ii, Is, O) }.
+
+json_exponent('') --> [ ].
 
 
 %% json_fraction/1
@@ -254,26 +314,27 @@ json_exponent('') --> [].
 
 json_sign('+') --> "+".
 json_sign('-') --> "-".
-json_sign('') --> [].
+json_sign('') --> [ ].
 
 
 %% ricordati di cambiarlo
 
 characters(A, Out) -->
-	["\\", "u"], !, hex(I1) ,hex(I2), hex(I3), hex(I4),
-	characters([I4, I3, I2, I1, "u", "\\" | A], Out).
+    ["\\", "u"], !,
+    hex(I1) ,hex(I2), hex(I3), hex(I4),
+    characters([I4, I3, I2, I1, "u", "\\" | A], Out).
 
 characters(A, Out) -->
-	["\\", Chr],
-	characters([Chr, "\\" | A], Out).
+    ["\\", Chr],
+    characters([Chr, "\\" | A], Out).
 
 characters(A, Out) -->
-    [C], {C \= 34},
+    [ C ], { C \= 34 },
     characters([C | A], Out).
 
 characters(A, Out) -->
-    [],
-    {reverse(A, Out)}, !.
+    [ ],
+    { reverse(A, Out) }.
 
 
 %%% controllo esplicito del hex anche se da alcune prove sembra che prolog faccia da solo con le strighe
@@ -287,9 +348,18 @@ characters(A, Out) -->
 % 2) 'a' . 'f'
 % and parses by returning the string of the hex figure
 
-hex(O) --> json_digit(I),{atom_string(I,O)}.
-hex(H) --> [H], {H > 64, H < 71}.
-hex(H) --> [H], {H > 96, H < 103}.
+hex(O) -->
+    json_digit(I),
+    { atom_string(I,O) }.
+
+hex(H) -->
+    [H],
+    { H > 64, H < 71 }.
+
+hex(H) -->
+    [H],
+    { H > 96, H < 103 }.
+
 
 jsonparse(JSONString, Object) :-
     string(JSONString),
