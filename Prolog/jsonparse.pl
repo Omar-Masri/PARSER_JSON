@@ -1,36 +1,88 @@
 %%%% -*- Mode: Prolog -*-
 
-ws --> [W], { char_type(W, white) }, ws.
-ws --> [].
+%% json_ws/0
+% Skips whitespace (ws) as their defined in http://json.org
+%
+% Skips 20 space
+% Skips 10 line feed (LF)
+% Skips 13 carriage return (CR)
+% Skips 9 horizontal tab (HT)
 
+json_ws -->
+    [W],
+    { W == 20, W == 10, W == 13 , W == 9 },
+    json_ws.
+
+json_ws -->
+    [].
+
+
+%% json/1
+% Defines json nonterminal
+% as per definition found in the http://json.org
 
 json(O) --> element(O).
 
 
-value(I) --> obj(I).
-value(I) --> array(I).
-value(I) --> string(I).
-value(I) --> json_number(I).
-value(true) --> "true".
-value(false) --> "false".
-value(null) --> "null".
+%% json_value/1
+% Defines value nonterminal
+% as per definition found in the http://json.org
+% a value is defined as being etheir
+% an object an array a string a number or
+% a true, false or null
+
+json_value(O) --> json_obj(O).
+json_value(O) --> array(O).
+json_value(O) --> string(O).
+json_value(O) --> json_number(O).
+json_value(true) --> "true".
+json_value(false) --> "false".
+json_value(null) --> "null".
 
 
-obj(Return) --> "{", ws, "}", !, {Return = jsonobj([])}.
-obj(I) --> "{", ws, members_j(Vl), ws, "}", !, {I = jsonobj(Vl)}.
+%% json_obj/1
+% Defines json nonterminal
+% as per definition found in the http://json.org
+% an object is defined as being etheir a
+% { ws } or
+% { members }
+% and parses by returning either the predicate
+% jsonobj([]) or jsonobj([I])
 
-members_j(I) --> member(Q), ",", members_j(O), {append(Q, O, I)}.
-members_j(I) --> member(O), !, {I = O}.
+json_obj(O) -->
+    "{", json_ws, "}",
+    {O = jsonobj([])}.
 
-member(Q) --> ws, string(I), ws, ":" , ws, value(R), ws, !, {Q = [(I,R)]}.
+json_obj(O) -->
+    "{",
+    json_ws, json_members(I), json_ws,
+    "}",
+    {O = jsonobj(I)}.
 
-array(O) --> "[", ws, "]", !, {O = jsonarray([])}.
-array(O) --> "[", ws, elements(Vl), ws, "]", {O = jsonarray(Vl)}.
+
+%% json_members/1
+% Defines members nonterminal
+% as per definition found in the http://json.org
+% members is defined as being:
+% 1) member
+% 2) member "," members
+% and parses by appending the outputs of member
+% and members if it's of the 2) form and
+% returns directly the output of member if
+% it's of the 1) form
+
+json_members(O) --> json_member(I), ",", json_members(Is), {append(I, Is, O)}.
+json_members(O) --> json_member(O).
+
+json_member(Q) --> json_ws, string(I), json_ws, ":" , json_ws, json_value(R), json_ws, !, {Q = [(I,R)]}.
+
+array(O) --> "[", json_ws, "]", !, {O = jsonarray([])}.
+array(O) --> "[", json_ws, elements(Vl), json_ws, "]", {O = jsonarray(Vl)}.
 
 elements(O) --> element(I), ",", elements(Is), !, {append([I], Is, O)}.
 elements(O) --> element(I), {O = [I]}.
 
-element(O) --> ws, value(I), ws , {O = I}.
+element(O) --> json_ws, json_value(I), json_ws , {O = I}.
 
 string(I) --> "\"", characters([], O) , "\"", !, {string_codes(I,O)},{print(I)},{nl}.
 
