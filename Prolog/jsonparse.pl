@@ -1,4 +1,7 @@
 %%%% -*- Mode: Prolog -*-
+% Masri Omar 879237
+% Piazza Lorenzo 886010
+% Pirovano Diego 886009
 
 %% json_ws/0
 % Skips whitespace (ws) as their defined in http://json.org
@@ -169,7 +172,7 @@ json_number(O) --> json_integer(Ii), json_fraction(If), json_exponent(Ie),
 json_integer(O) --> json_one_nine(I), json_digits(Is), {atom_concat(I, Is, O)}.
 json_integer(O) --> "-", json_one_nine(I), json_digits(Is), {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
 json_integer(O) --> json_digit(O).
-json_integer(O) --> "-", json_digit(I), {append(["-"], I, O)}.
+json_integer(O) --> "-", json_digit(I), {atom_concat(-, I, O)}.
 
 
 %% json_digits/1
@@ -275,8 +278,8 @@ characters(A, Out) -->
 
 %%% controllo esplicito del hex anche se da alcune prove sembra che prolog faccia da solo con le strighe
 
-%% json_fraction/1
-% Defines fraction nonterminal
+%% hex/1
+% Defines hex nonterminal
 % as per definition found in the http://json.org
 % elements is defined as being:
 % 1) digit
@@ -284,7 +287,7 @@ characters(A, Out) -->
 % 2) 'a' . 'f'
 % and parses by returning the string of the hex figure
 
-hex(O) --> digit(I),{atom_string(I,O)}.
+hex(O) --> json_digit(I),{atom_string(I,O)}.
 hex(H) --> [H], {H > 64, H < 71}.
 hex(H) --> [H], {H > 96, H < 103}.
 
@@ -342,3 +345,8 @@ jsonread(FileName, JSONObj) :-
     read_string(In, _, JSON),
     close(In),
     jsonparse(JSON, JSONObj).
+
+%%jsonwrite
+%%jsonwrite(JSONObj, FileName)
+%jsonwrite(JSONObj, FileName) :-
+%    phrase(json(Object), L).
