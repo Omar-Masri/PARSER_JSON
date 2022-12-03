@@ -302,3 +302,34 @@ jsonparse(JSONAtom, Object) :-
 
 %%% jsonparse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
 %%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
+
+
+%%jsonaccess
+%jsonaccess(jsonobj(), field, out)
+
+jsonaccess(jsonobj(Members), [], jsonobj(Members)) :- !.
+jsonaccess(jsonobj([(X, Out) | _]), X, Out).
+jsonaccess(jsonobj([_ | Rest]), X, Out) :-
+    string(X),
+    jsonaccess(jsonobj(Rest), X, Out).
+    
+jsonaccess(jsonobj(Members), [X], Out) :-
+    jsonaccess(jsonobj(Members), X, Out).
+
+jsonaccess(jsonobj([(X, jsonarray([E | _])) | _]), [X, 0], E) :- !.
+
+jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N], Out) :-
+    integer(N),
+    N \= 0,
+    N1 is N - 1,
+    access_array(Elements, N1, Out).
+
+jsonaccess(jsonobj([_ | Rest]), [X, N], Out) :-
+    string(X),
+    integer(N),
+    jsonaccess(jsonobj(Rest), [X , N], Out).
+
+access_array([E | _], 0, E) :- !.
+access_array([_ | Elements], N, Out) :-
+    N1 is N - 1,
+    access_array(Elements, N1, Out).
