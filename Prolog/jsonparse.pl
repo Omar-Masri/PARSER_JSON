@@ -3,14 +3,14 @@
 %% json_ws/0
 % Skips whitespace (ws) as their defined in http://json.org
 %
-% Skips 20 space
+% Skips 32 space
 % Skips 10 line feed (LF)
 % Skips 13 carriage return (CR)
 % Skips 9 horizontal tab (HT)
 
 json_ws -->
     [W],
-    { W == 20, W == 10, W == 13 , W == 9 },
+    { W == 32; W == 10; W == 13; W == 9 },
     json_ws.
 
 json_ws -->
@@ -123,7 +123,7 @@ json_sign('+') --> "+".
 json_sign('-') --> "-".
 json_sign('') --> [].
 
-ricordati di cambiarlo
+%% ricordati di cambiarlo
 
 characters(A, Out) -->
 	["\\", "u"], !, hex(I1) ,hex(I2), hex(I3), hex(I4),
