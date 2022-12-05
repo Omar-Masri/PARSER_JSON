@@ -377,7 +377,7 @@ jsonparse(JSONAtom, Object) :-
 %%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
 
 
-%%jsonaccess/3
+%%jsonaccess\3
 %jsonaccess(jsonobj(), field, out)
 
 jsonaccess(jsonobj(Members), [], jsonobj(Members)) :- !.

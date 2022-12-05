@@ -154,7 +154,7 @@ json_elements(O) -->
 % as per definition found in the http://json.org
 % elements is defined as being:
 % 1) ws value ws
-% and parses by returning directly the output of value
+% and parses by returning directly the output of value 
 
 json_element(O) -->
     json_ws,
@@ -289,7 +289,7 @@ json_fraction('') --> [ ].
 % 2) 'E' sign digits
 % 2) 'e' sign digits
 % and parses by returning either and empty atom or the
-% concatenation of 'E'/'e' , the output of sign and of digits
+% concatenation of 'E'/'e' , the output of sign and of digits 
 
 json_exponent(O) -->
     "E", json_sign(I), json_digits(Is),
@@ -377,7 +377,7 @@ jsonparse(JSONAtom, Object) :-
 %%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
 
 
-%%jsonaccess/3
+%%jsonaccess
 %jsonaccess(jsonobj(), field, out)
 
 jsonaccess(jsonobj(Members), [], jsonobj(Members)) :- !.
@@ -385,7 +385,7 @@ jsonaccess(jsonobj([(X, Out) | _]), X, Out).
 jsonaccess(jsonobj([_ | Rest]), X, Out) :-
     string(X),
     jsonaccess(jsonobj(Rest), X, Out).
-
+    
 jsonaccess(jsonobj(Members), [X], Out) :-
     jsonaccess(jsonobj(Members), X, Out).
 
@@ -401,10 +401,6 @@ jsonaccess(jsonobj([_ | Rest]), [X, N], Out) :-
     string(X),
     integer(N),
     jsonaccess(jsonobj(Rest), [X , N], Out).
-
-jsonaccess(jsonobj([(_, jsonobj(Members)) | _ ]), X, Out) :-
-    string(X),
-    jsonaccess(jsonobj(Members), X, Out).
 
 access_array([E | _], 0, E) :- !.
 access_array([_ | Elements], N, Out) :-
