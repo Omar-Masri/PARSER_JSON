@@ -429,31 +429,31 @@ jsonread(FileName, JSONObj) :-
 jsonencode([], "") :- !.
 
 jsonencode(jsonobj(I), Out) :-
-    jsondecode(I, O1),
+    jsonencode(I, O1),
     string_concat("{/n", O1, O2),
     string_concat(O2, "/n}/n", Out), !.
 
 jsonencode(jsonarray(I), Out) :-
-    jsondecode(I, O1),
+    jsonencode(I, O1),
     string_concat(" [ ", O1, O2),
     string_concat(O2, " ] ", Out), !.
 
 jsonencode([X | []], Out) :-
-    jsondecode(X, Out), 
+    jsonencode(X, Out), 
     !.
 
 jsonencode([X | Xs], Out) :-
-    jsondecode(X, O1),
+    jsonencode(X, O1),
     string_concat(O1, ",\n", O2), 
-    jsondecode(Xs, O3),
+    jsonencode(Xs, O3),
     string_concat(O2, O3, Out), !.
 
 jsonencode((X, Y), Out) :-
     %%potrei chiamare direttamente term_string/2
     %%dato che X è per forza una string
-    jsondecode(X, XDecoded),
-    string_concat(XDecoded, " : ", O1),
-    jsondecode(Y, O2),
+    jsonencode(X, XEncoded),
+    string_concat(XEncoded, " : ", O1),
+    jsonencode(Y, O2),
     string_concat(O1, O2, Out),
     !.
 %%chiede se si può usare term_string/2
