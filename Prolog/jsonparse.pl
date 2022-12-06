@@ -425,30 +425,30 @@ jsonread(FileName, JSONObj) :-
 %jsonwrite(JSONObj, FileName) :-
 %    phrase(json(Object), L).
 
-%%jsondecode/2
-jsondecode([], "") :- !.
+%%jsonencode/2
+jsonencode([], "") :- !.
 
-jsondecode(jsonobj(I), Out) :-
+jsonencode(jsonobj(I), Out) :-
     jsondecode(I, O1),
     string_concat("{/n", O1, O2),
     string_concat(O2, "/n}/n", Out), !.
 
-jsondecode(jsonarray(I), Out) :-
+jsonencode(jsonarray(I), Out) :-
     jsondecode(I, O1),
     string_concat(" [ ", O1, O2),
     string_concat(O2, " ] ", Out), !.
 
-jsondecode([X | []], Out) :-
+jsonencode([X | []], Out) :-
     jsondecode(X, Out), 
     !.
 
-jsondecode([X | Xs], Out) :-
+jsonencode([X | Xs], Out) :-
     jsondecode(X, O1),
     string_concat(O1, ",\n", O2), 
     jsondecode(Xs, O3),
     string_concat(O2, O3, Out), !.
 
-jsondecode((X, Y), Out) :-
+jsonencode((X, Y), Out) :-
     %%potrei chiamare direttamente term_string/2
     %%dato che X è per forza una string
     jsondecode(X, XDecoded),
@@ -457,5 +457,5 @@ jsondecode((X, Y), Out) :-
     string_concat(O1, O2, Out),
     !.
 %%chiede se si può usare term_string/2
-jsondecode(X, Out) :- term_string(X, Out).
+jsonencode(X, Out) :- term_string(X, Out).
     
