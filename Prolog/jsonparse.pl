@@ -470,7 +470,6 @@ jsonencode(jsonarray(I), Out, Indent) :-
     string_concat(Prev, O1, O2),
     string_concat("\n", Tab1, Mid),
     string_concat(Mid, "]", Next),
-    print(Next),
     string_concat(O2, Next, Out), !.
 
 jsonencode([X | []], Out, Indent) :-
@@ -514,6 +513,14 @@ addtab(Indent, Out1) :-
 %% chiedi per utilizzo indentazione su json encode
 %% chiedi per atom_concat e eventualmente atomic_list_concat e string_concat
 %% chiedi per hex e la gestione degli escape in json soprattutto per quanto riguarda hex
+%% chiedi term_string/2 e' ammissibile
+%% vedere cosa fare con hex se farlo che tanto lo gestisce da solo
+%% vedere cosa fare per escape bisogna tecnicamente che funzionino solo gli escape definiti in http://json.org
 
+
+%%%% cose da fare
+%% mettere Out alla fine del predicato jsonencode al posto di Indent
+%% vedere cosa fare per escape bisogna tecnicamente che funzionino solo gli escape definiti in http://json.org
+%% finire la documentazione
 
 %%%% end of file -- jsonparse.pl --
