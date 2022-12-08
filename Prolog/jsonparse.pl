@@ -4,12 +4,12 @@
 % Pirovano Diego 886009
 
 %% json_ws/0
-% Skips whitespace (ws) as their defined in http://json.org
+% Skips whitespaces (ws) as their defined in http://json.org
 %
-% Skips 32 space
-% Skips 10 line feed (LF)
-% Skips 13 carriage return (CR)
-% Skips 9 horizontal tab (HT)
+% Skips ASCII code 32 - space
+% Skips ASCII code 10 - line feed (LF)
+% Skips ASCII code 13 - carriage return (CR)
+% Skips ASCII code 9 - horizontal tab (HT)
 
 json_ws -->
     [W],
@@ -22,7 +22,7 @@ json_ws -->
 
 %% json/1
 % Defines json nonterminal
-% as per definition found in the http://json.org
+% as per definition found in http://json.org
 
 json(O) -->
     json_element(O).
@@ -30,10 +30,13 @@ json(O) -->
 
 %% json_value/1
 % Defines value nonterminal
-% as per definition found in the http://json.org
-% a value is defined as being etheir
-% an object an array a string a number or
-% a true, false or null
+% as per definition found in http://json.org
+% a value is defined as being either:
+% 1) object
+% 2) array
+% 3) string
+% 4) number
+% 5) true or false or null
 
 json_value(O) --> json_obj(O).
 json_value(O) --> json_array(O).
@@ -45,13 +48,15 @@ json_value(null) --> "null".
 
 
 %% json_obj/1
-% Defines json nonterminal
-% as per definition found in the http://json.org
-% an object is defined as being etheir a
+% Defines object nonterminal
+% as per definition found in http://json.org
+% an object is defined as being etheir:
 % 1) '{' ws '}' or
 % 2) '{' members '}'
-% and parses by returning either the predicate
-% jsonobj([]) or jsonobj([I])
+% and parses by returning either the predicate:
+% jsonobj([]) if the string is of the form 1)
+% jsonobj([I]) if the string is of the form 2)
+% where "I" is the output of json_members/1
 
 json_obj(O) -->
     "{", json_ws, "}", !,
@@ -66,14 +71,14 @@ json_obj(O) -->
 
 %% json_members/1
 % Defines members nonterminal
-% as per definition found in the http://json.org
-% members is defined as being:
+% as per definition found in http://json.org
+% members is defined as being either:
 % 1) member
 % 2) member "," members
-% and parses by appending the outputs of member
-% and members if it's of the 2) form and
-% returns directly the output of member if
-% it's of the 1) form
+% and parses by returning a list created by appending the outputs
+% of json_member/1 and json_members/1 if the string is of the form 2)
+% or returns directly the output of json_member/1 if
+% the string is of the form 1)
 
 json_members(O) -->
     json_member(I),
@@ -87,12 +92,12 @@ json_members(O) -->
 
 %% json_member/1
 % Defines member nonterminal
-% as per definition found in the http://json.org
+% as per definition found in http://json.org
 % member is defined as being:
 % 1) ws string ws ':' element
-% and parses by creating an array with one tuple inside
-% where the tuple has as the first item what is returned by string
-% and as the second what is returned by value
+% and parses by returning a list created with one tuple inside, where
+% the tuple has as the first item what is returned by json_string/1
+% and as the second what is returned by json_value/1
 
 json_member(O) -->
     json_ws,
@@ -107,12 +112,16 @@ json_member(O) -->
 
 %% json_array/1
 % Defines array nonterminal
-% as per definition found in the http://json.org
-% array is defined as being:
+% as per definition found in http://json.org
+% array is defined as being either:
 % 1) '[' ws ']' or
 % 2) '[' elements ']'
 % and parses by returning either the predicate
 % jsonarray([]) or jsonarray(I)
+% and parses by returning either the predicate:
+% jsonarray([]) if the string is of the form 1)
+% jsonarray(I) if the string is of the form 2)
+% where "I" is the output of json_members/1
 
 json_array(O) -->
     "[", json_ws, "]", !,
@@ -373,10 +382,6 @@ jsonparse(JSONAtom, Object) :-
     phrase(json(Object), L),
     print(Object).
 
-%%% jsonparse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
-%%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
-
-
 %%jsonaccess/3
 %jsonaccess(jsonobj(), field, out)
 
@@ -420,18 +425,21 @@ jsonread(FileName, JSONObj) :-
     close(In),
     jsonparse(JSON, JSONObj).
 
-%%jsonwrite/2
-%%jsonwrite(JSONObj, FileName)
-%jsonwrite(JSONObj, FileName) :-
-%    phrase(json(Object), L).
+%% jsonwrite/2
+jsonwrite(JSONObj, FileName) :-
+    jsonencode(JSONObj, Json),
+    open(FileName, write, Out),
+    write(Out, Json),
+    close(Out).
+    
 
 %%jsonencode/2
 jsonencode([], "") :- !.
 
 jsonencode(jsonobj(I), Out) :-
     jsonencode(I, O1),
-    string_concat("{/n", O1, O2),
-    string_concat(O2, "/n}/n", Out), !.
+    string_concat("{\n", O1, O2),
+    string_concat(O2, "\n}", Out), !.
 
 jsonencode(jsonarray(I), Out) :-
     jsonencode(I, O1),
@@ -448,14 +456,24 @@ jsonencode([X | Xs], Out) :-
     jsonencode(Xs, O3),
     string_concat(O2, O3, Out), !.
 
+
 jsonencode((X, Y), Out) :-
-    %%potrei chiamare direttamente term_string/2
-    %%dato che X è per forza una string
     jsonencode(X, XEncoded),
     string_concat(XEncoded, " : ", O1),
     jsonencode(Y, O2),
     string_concat(O1, O2, Out),
     !.
-%%chiede se si può usare term_string/2
+
+
 jsonencode(X, Out) :- term_string(X, Out).
     
+
+
+%%% jsonparse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
+%%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
+
+
+%% chiedi arita delle dcg
+%% chiedi per utilizzo degli or (;) in ws
+
+%%%% end of file -- jsonparse.pl -- 

@@ -1,0 +1,8 @@
+{
+"sasso" : 1.23,
+"besugo" : {
+"sasso1" :  [ "s",
+"gabibbo㨯" ] 
+}
+
+}
