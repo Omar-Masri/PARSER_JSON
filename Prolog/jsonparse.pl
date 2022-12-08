@@ -1,7 +1,10 @@
 %%%% -*- Mode: Prolog -*-
+
+%% Members:
 % Masri Omar 879237
 % Piazza Lorenzo 886010
 % Pirovano Diego 886009
+
 
 %% json_ws/0
 % Skips whitespaces (ws) as their defined in http://json.org
@@ -77,7 +80,7 @@ json_obj(O) -->
 % 2) member "," members
 % and parses by returning a list created by appending the outputs
 % of json_member/1 and json_members/1 if the string is of the form 2)
-% or returns directly the output of json_member/1 if
+% or by returning directly the output of json_member/1 if
 % the string is of the form 1)
 
 json_members(O) -->
@@ -116,12 +119,10 @@ json_member(O) -->
 % array is defined as being either:
 % 1) '[' ws ']' or
 % 2) '[' elements ']'
-% and parses by returning either the predicate
-% jsonarray([]) or jsonarray(I)
 % and parses by returning either the predicate:
 % jsonarray([]) if the string is of the form 1)
 % jsonarray(I) if the string is of the form 2)
-% where "I" is the output of json_members/1
+% where "I" is the output of json_elements/1
 
 json_array(O) -->
     "[", json_ws, "]", !,
@@ -138,14 +139,14 @@ json_array(O) -->
 
 %% json_elements/1
 % Defines elements nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
-% 1) element or
+% as per definition found in http://json.org
+% elements is defined as being either:
+% 1) element
 % 2) element ',' elements
-% and parses by appending the outputs of element
-% and elements if it's of the 2) form and
-% returns an array with the output of member inside of it
-% if it's of the 1) form
+% and parses by returning a list created by appending the outputs of
+% json_element/1 and json_elements/1 if the string is of the form 2)
+% or by returning an array with the output of json_member/1 inside of it
+% if it's of the form 1)
 
 json_elements(O) -->
     json_element(I),
@@ -159,11 +160,11 @@ json_elements(O) -->
 
 
 %% json_element/1
-% Defines elements nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% Defines element nonterminal
+% as per definition found in http://json.org
+% element is defined as being:
 % 1) ws value ws
-% and parses by returning directly the output of value
+% and parses by returning directly the output of json_value/1
 
 json_element(O) -->
     json_ws,
@@ -173,26 +174,28 @@ json_element(O) -->
 
 %% json_string/1
 % Defines string nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% string is defined as being:
 % 1) '"' characters '"'
-% and parses by getting the output of charachter
-% and transforming it to a string
+% and parses by getting the output of json_charachter/1
+% and converts it to a string
 
 json_string(O) -->
     "\"",
-    characters([], I),
+    json_characters([], I),
     "\"", !,
     { string_codes(O, I) },{print(O)},{nl}.
 
 
 %% json_number/1
 % Defines number nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% number is defined as being:
 % 1) integer fraction exponent
-% and parses by concatenating the output atoms from
-% integer, fraction, and exponent and trasforming it to a number
+% and parses by concatenating the output atoms of
+% json_integer/1, json_fraction/1 and json_exponent/1
+% and converting the atom, resulting from the concatenation,
+% to a number and returning said number
 
 json_number(O) -->
     json_integer(Ii), json_fraction(If), json_exponent(Ie),
@@ -202,14 +205,15 @@ json_number(O) -->
 
 %% json_integer/1
 % Defines integer nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% integer is defined as being either:
 % 1) digit
 % 2) onenine digit
 % 3) '-' digit
 % 4) '-' onenine digit
-% and parses by concatenating the atoms retured from onenine
-% and digits and eventually adding a minus at the start
+% and parses by concatenating the atoms returned from json_onenine/1
+% and json_digits/1 and eventually, if the string is of the
+% form 1) or 2), adding a minus at the start
 
 json_integer(O) -->
     json_one_nine(I), json_digits(Is),
@@ -229,12 +233,14 @@ json_integer(O) -->
 
 %% json_digits/1
 % Defines digits nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% digits is defined as being either:
 % 1) digit
 % 2) digit digits
-% and parses by concatenating the atoms retured from onenine
-% and digits and eventually adding a minus at the start
+% and parses by concatenating the atoms returned from json_digit/1
+% and json_digits/1 if the string is of the form 2)
+% or by returing directly the output of json_digit/1 if
+% the string is of the form 1)
 
 json_digits(O) -->
     json_digit(I), json_digits(Is), !,
@@ -246,12 +252,12 @@ json_digits(O) -->
 
 %% json_digit/1
 % Defines digit nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% digit is defined as being either:
 % 1) '0'
 % 2) onenine
-% and parses by returning the atom '0' if of the 1) form
-% or returns directly the output of onenine if of 2) form
+% and parses by returning the atom '0' if the string is of the form 1)
+% or by returning directly the output of json_onenine/1 if of form 2)
 
 json_digit('0') -->
     "0", !.
@@ -262,11 +268,11 @@ json_digit(O) -->
 
 %% json_one_nine/1
 % Defines onenine nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% onenine is defined as being:
 % 1) '0' . '9'
 % and parses by returning the number created by taking
-% the ascii value of the charachter and subtracting 48 from it
+% the ASCII value of the charachter and subtracting 48 from it
 
 json_one_nine(No) -->
     [N],
@@ -277,11 +283,12 @@ json_one_nine(No) -->
 %% json_fraction/1
 % Defines fraction nonterminal
 % as per definition found in the http://json.org
-% elements is defined as being:
+% fraction is defined as being either:
 % 1) ""
 % 2) '.' digits
-% and parses by returning either and empty atom or the
-% concatenation of '.' and the output of digits
+% and parses by returning either an empty atom if the string is of the
+% form 1) or the concatenation of '.' and the output of json_digits/1
+% if the string is of the form 2)
 
 json_fraction(O) -->
     ".", json_digits(I),
@@ -290,15 +297,16 @@ json_fraction(O) -->
 json_fraction('') --> [ ].
 
 
-%% json_fraction/1
-% Defines fraction nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+%% json_exponent/1
+% Defines exponent nonterminal
+% as per definition found in http://json.org
+% exponent is defined as being either:
 % 1) ""
 % 2) 'E' sign digits
-% 2) 'e' sign digits
-% and parses by returning either and empty atom or the
-% concatenation of 'E'/'e' , the output of sign and of digits
+% 3) 'e' sign digits
+% and parses by returning either an empty atom if the string is of the
+% form 1) or the concatenation of 'E' or 'e' and the outputs of
+% json_sign/1 and of json_digits/1 if the string is of the form 2) 3)
 
 json_exponent(O) -->
     "E", json_sign(I), json_digits(Is),
@@ -311,15 +319,15 @@ json_exponent(O) -->
 json_exponent('') --> [ ].
 
 
-%% json_fraction/1
-% Defines fraction nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+%% json_sign/1
+% Defines sign nonterminal
+% as per definition found in http://json.org
+% sign is defined as being either:
 % 1) ""
 % 2) '+'
-% 2) '-'
-% and parses by returning either and empty atom or
-% the plus sign '+' or the minus sign '-'
+% 3) '-'
+% and parses by returning either an empty atom,
+% the atom '+' or the atom '-'
 
 json_sign('+') --> "+".
 json_sign('-') --> "-".
@@ -327,35 +335,39 @@ json_sign('') --> [ ].
 
 
 %% ricordati di cambiarlo
+%% json_characters/1
+% accumulates chars and returns the reverse of the accumulated chars
+% the predicate avoids the ASCII code 34 (") and has a special case
+% for handling escape sequences
 
-characters(A, Out) -->
+json_characters(A, Out) -->
     ["\\", "u"], !,
     hex(I1) ,hex(I2), hex(I3), hex(I4),
-    characters([I4, I3, I2, I1, "u", "\\" | A], Out).
+    json_characters([I4, I3, I2, I1, "u", "\\" | A], Out).
 
-characters(A, Out) -->
+json_characters(A, Out) -->
     ["\\", Chr],
-    characters([Chr, "\\" | A], Out).
+    json_characters([Chr, "\\" | A], Out).
 
-characters(A, Out) -->
+json_characters(A, Out) -->
     [ C ], { C \= 34 },
-    characters([C | A], Out).
+    json_characters([C | A], Out).
 
-characters(A, Out) -->
+json_characters(A, Out) -->
     [ ],
     { reverse(A, Out) }.
 
 
-%%% controllo esplicito del hex anche se da alcune prove sembra che prolog faccia da solo con le strighe
+%%% controllo esplicito del hex anche se da alcune prove sembra che prolog faccia da solo con le strighe e atomi
 
 %% hex/1
 % Defines hex nonterminal
-% as per definition found in the http://json.org
-% elements is defined as being:
+% as per definition found in http://json.org
+% hex is defined as being:
 % 1) digit
 % 2) 'A' . 'F'
 % 2) 'a' . 'f'
-% and parses by returning the string of the hex figure
+% and parses by returning the char of the hex digit
 
 hex(O) -->
     json_digit(I),
@@ -404,12 +416,11 @@ jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N], Out) :-
 
 jsonaccess(jsonobj([_ | Rest]), [X, N], Out) :-
     string(X),
-    integer(N),
     jsonaccess(jsonobj(Rest), [X , N], Out).
 
-jsonaccess(jsonobj([(_, jsonobj(Members)) | _ ]), X, Out) :-
+jsonaccess(jsonobj([(X, jsonobj(Members)) | _ ]), [X, C], Out) :-
     string(X),
-    jsonaccess(jsonobj(Members), X, Out).
+    jsonaccess(jsonobj(Members), C, Out).
 
 access_array([E | _], 0, E) :- !.
 access_array([_ | Elements], N, Out) :-
@@ -419,61 +430,90 @@ access_array([_ | Elements], N, Out) :-
 %%input e output
 %%jsonread/2
 %%jsonread(FileName, JSON)
+
 jsonread(FileName, JSONObj) :-
     open(FileName, read, In),
     read_string(In, _, JSON),
     close(In),
     jsonparse(JSON, JSONObj).
 
+
 %% jsonwrite/2
 jsonwrite(JSONObj, FileName) :-
-    jsonencode(JSONObj, Json),
+    jsonencode(JSONObj, Json, 0),
     open(FileName, write, Out),
     write(Out, Json),
     close(Out).
     
 
-%%jsonencode/2
-jsonencode([], "") :- !.
+%%jsonencode/3
+jsonencode([], "", _) :- !.
 
-jsonencode(jsonobj(I), Out) :-
-    jsonencode(I, O1),
-    string_concat("{\n", O1, O2),
-    string_concat(O2, "\n}", Out), !.
+jsonencode(jsonobj(I), Out, Indent) :-
+    integer(Indent),
+    IncrementedIndent is Indent + 1,
+    jsonencode(I, O1, IncrementedIndent),
+    addtab(IncrementedIndent, Tab),
+    addtab(Indent, Tab1),
+    string_concat("{\n", Tab, Prev),
+    string_concat(Prev, O1, O2),
+    string_concat("\n", Tab1, Prev1),
+    string_concat(Prev1, "}", Next),
+    string_concat(O2, Next, Out), !.
 
-jsonencode(jsonarray(I), Out) :-
-    jsonencode(I, O1),
-    string_concat(" [ ", O1, O2),
-    string_concat(O2, " ] ", Out), !.
+jsonencode(jsonarray(I), Out, Indent) :-
+    In is Indent + 1,
+    jsonencode(I, O1, In),
+    addtab(In, Tab),
+    addtab(Indent, Tab1),
+    string_concat("[\n", Tab, Prev),
+    string_concat(Prev, O1, O2),
+    string_concat("\n", Tab1, Mid),
+    string_concat(Mid, "]", Next),
+    print(Next),
+    string_concat(O2, Next, Out), !.
 
-jsonencode([X | []], Out) :-
-    jsonencode(X, Out), 
+jsonencode([X | []], Out, Indent) :-
+    jsonencode(X, Out, Indent), 
     !.
 
-jsonencode([X | Xs], Out) :-
-    jsonencode(X, O1),
-    string_concat(O1, ",\n", O2), 
-    jsonencode(Xs, O3),
+jsonencode([X | Xs], Out, Indent) :-
+    jsonencode(X, O1, Indent),
+    addtab(Indent, Tab),
+    string_concat(",\n", Tab, Mid),
+    string_concat(O1, Mid, O2), 
+    jsonencode(Xs, O3, Indent),
     string_concat(O2, O3, Out), !.
 
 
-jsonencode((X, Y), Out) :-
-    jsonencode(X, XEncoded),
+jsonencode((X, Y), Out, Indent) :-
+    jsonencode(X, XEncoded, Indent),
     string_concat(XEncoded, " : ", O1),
-    jsonencode(Y, O2),
+    jsonencode(Y, O2, Indent),
     string_concat(O1, O2, Out),
     !.
 
 
-jsonencode(X, Out) :- term_string(X, Out).
-    
+jsonencode(X, Out, _) :- term_string(X, Out).
 
+addtab(0, "") :- !.
+
+addtab(Indent, Out1) :-
+    integer(Indent),
+    Indent > 0,
+    NewIndent is Indent - 1,
+    addtab(NewIndent, Out),
+    string_concat(Out, "\t", Out1).
 
 %%% jsonparse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
 %%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
 
-
+%%%% domande
 %% chiedi arita delle dcg
 %% chiedi per utilizzo degli or (;) in ws
+%% chiedi per utilizzo indentazione su json encode
+%% chiedi per atom_concat e eventualmente atomic_list_concat e string_concat
+%% chiedi per hex e la gestione degli escape in json soprattutto per quanto riguarda hex
 
-%%%% end of file -- jsonparse.pl -- 
+
+%%%% end of file -- jsonparse.pl --
