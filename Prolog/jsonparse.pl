@@ -440,19 +440,19 @@ jsonread(FileName, JSONObj) :-
 
 %% jsonwrite/2
 jsonwrite(JSONObj, FileName) :-
-    jsonencode(JSONObj, Json, 0),
+    jsonencode(JSONObj, 0, Json),
     open(FileName, write, Out),
     write(Out, Json),
     close(Out).
     
 
 %%jsonencode/3
-jsonencode([], "", _) :- !.
+jsonencode([], _, "") :- !.
 
-jsonencode(jsonobj(I), Out, Indent) :-
+jsonencode(jsonobj(I), Indent, Out) :-
     integer(Indent),
     IncrementedIndent is Indent + 1,
-    jsonencode(I, O1, IncrementedIndent),
+    jsonencode(I, IncrementedIndent, O1),
     addtab(IncrementedIndent, Tab),
     addtab(Indent, Tab1),
     string_concat("{\n", Tab, Prev),
@@ -461,9 +461,9 @@ jsonencode(jsonobj(I), Out, Indent) :-
     string_concat(Prev1, "}", Next),
     string_concat(O2, Next, Out), !.
 
-jsonencode(jsonarray(I), Out, Indent) :-
+jsonencode(jsonarray(I), Indent, Out) :-
     In is Indent + 1,
-    jsonencode(I, O1, In),
+    jsonencode(I, In, O1),
     addtab(In, Tab),
     addtab(Indent, Tab1),
     string_concat("[\n", Tab, Prev),
@@ -472,28 +472,28 @@ jsonencode(jsonarray(I), Out, Indent) :-
     string_concat(Mid, "]", Next),
     string_concat(O2, Next, Out), !.
 
-jsonencode([X | []], Out, Indent) :-
-    jsonencode(X, Out, Indent), 
+jsonencode([X | []], Indent, Out) :-
+    jsonencode(X, Indent, Out), 
     !.
 
-jsonencode([X | Xs], Out, Indent) :-
-    jsonencode(X, O1, Indent),
+jsonencode([X | Xs], Indent, Out) :-
+    jsonencode(X, Indent, O1),
     addtab(Indent, Tab),
     string_concat(",\n", Tab, Mid),
     string_concat(O1, Mid, O2), 
-    jsonencode(Xs, O3, Indent),
+    jsonencode(Xs, Indent, O3),
     string_concat(O2, O3, Out), !.
 
 
-jsonencode((X, Y), Out, Indent) :-
-    jsonencode(X, XEncoded, Indent),
+jsonencode((X, Y), Indent, Out) :-
+    jsonencode(X, Indent, XEncoded),
     string_concat(XEncoded, " : ", O1),
-    jsonencode(Y, O2, Indent),
+    jsonencode(Y, Indent, O2),
     string_concat(O1, O2, Out),
     !.
 
 
-jsonencode(X, Out, _) :- term_string(X, Out).
+jsonencode(X, _, Out) :- term_string(X, Out).
 
 addtab(0, "") :- !.
 
