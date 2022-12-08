@@ -178,13 +178,13 @@ json_element(O) -->
 % string is defined as being:
 % 1) '"' characters '"'
 % and parses by getting the output of json_charachter/1
-% and converts it to a string
+% wich is a list and converts it to a string
 
 json_string(O) -->
     "\"",
     json_characters([], I),
     "\"", !,
-    { string_codes(O, I) },{print(O)},{nl}.
+    { string_codes(O, I) }.
 
 
 %% json_number/1
@@ -276,8 +276,8 @@ json_digit(O) -->
 
 json_one_nine(No) -->
     [N],
-    { N > 48, N < 58 }, { print("ciao") },
-    { No is N - 48 }, { print(No) }.
+    { N > 48, N < 58 },
+    { No is N - 48 }.
 
 
 %% json_fraction/1
@@ -340,14 +340,14 @@ json_sign('') --> [ ].
 % the predicate avoids the ASCII code 34 (") and has a special case
 % for handling escape sequences
 
-json_characters(A, Out) -->
-    ["\\", "u"], !,
-    hex(I1) ,hex(I2), hex(I3), hex(I4),
-    json_characters([I4, I3, I2, I1, "u", "\\" | A], Out).
+%json_characters(A, Out) -->
+%    ["\\", "u"], !,
+%    hex(I1) ,hex(I2), hex(I3), hex(I4),
+%    json_characters([I4, I3, I2, I1, "u", "\\" | A], Out).
 
 json_characters(A, Out) -->
-    ["\\", Chr],
-    json_characters([Chr, "\\" | A], Out).
+    [92, Chr], !,
+    json_characters([Chr, 92 | A], Out).
 
 json_characters(A, Out) -->
     [ C ], { C \= 34 },
