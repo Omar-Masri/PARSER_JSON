@@ -414,6 +414,18 @@ jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N], Out) :-
     N1 is N - 1,
     access_array(Elements, N1, Out).
 
+%%%access array of jsonobj
+jsonaccess(jsonobj([(X, jsonarray([E | _])) | _]), [X, 0, Val], Out) :-
+    jsonaccess(E, Val, Out),
+    !.
+
+jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N, Val], Out) :-
+    N \= 0,
+    N1 is N -1,
+    access_array(Elements, N1, O),
+    jsonaccess(O, Val, Out).
+%%%end access array of jsonobj
+
 jsonaccess(jsonobj([_ | Rest]), [X, N], Out) :-
     string(X),
     jsonaccess(jsonobj(Rest), [X , N], Out).
@@ -422,7 +434,10 @@ jsonaccess(jsonobj([(X, jsonobj(Members)) | _ ]), [X, C], Out) :-
     string(X),
     jsonaccess(jsonobj(Members), C, Out).
 
+%%access_array/3
+
 access_array([E | _], 0, E) :- !.
+
 access_array([_ | Elements], N, Out) :-
     N1 is N - 1,
     access_array(Elements, N1, Out).
