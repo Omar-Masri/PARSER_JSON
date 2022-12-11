@@ -16,7 +16,7 @@
 
 json_ws -->
     [W],
-    { W == 32; W == 10; W == 13; W == 9 },
+    { W == 32; W == 10; W == 13; W == 9 }, !,
     json_ws.
 
 json_ws -->
@@ -168,7 +168,7 @@ json_elements(O) -->
 
 json_element(O) -->
     json_ws,
-    json_value(O),
+    json_value(O), !,
     json_ws.
 
 
@@ -216,18 +216,18 @@ json_number(O) -->
 % form 1) or 2), adding a minus at the start
 
 json_integer(O) -->
-    json_one_nine(I), json_digits(Is),
+    json_one_nine(I), json_digits(Is), !,
     {atom_concat(I, Is, O)}.
 
 json_integer(O) -->
-    "-", json_one_nine(I), json_digits(Is),
+    "-", json_one_nine(I), json_digits(Is), !,
     {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
 
 json_integer(O) -->
-    json_digit(O).
+    json_digit(O), !.
 
 json_integer(O) -->
-    "-", json_digit(I),
+    "-", json_digit(I), !,
     { atom_concat(-, I, O) }.
 
 
@@ -309,7 +309,7 @@ json_fraction('') --> [ ].
 % json_sign/1 and of json_digits/1 if the string is of the form 2) 3)
 
 json_exponent(O) -->
-    "E", json_sign(I), json_digits(Is),
+    "E", json_sign(I), json_digits(Is), !,
     { atom_concat('E', I, Ii) }, { atom_concat(Ii, Is, O) }.
 
 json_exponent(O) -->
@@ -350,7 +350,7 @@ json_characters(A, Out) -->
     json_characters([Chr, 92 | A], Out).
 
 json_characters(A, Out) -->
-    [ C ], { C \= 34 },
+    [ C ], { C \= 34 }, !,
     json_characters([C | A], Out).
 
 json_characters(A, Out) -->
@@ -385,62 +385,98 @@ hex(H) -->
 jsonparse(JSONString, Object) :-
     string(JSONString),
     string_codes(JSONString, L),
-    phrase(json(Object), L),
-    print(Object).
+    phrase(json(Object), L), !.
+    %print(Object).
 
 jsonparse(JSONAtom, Object) :-
     atom(JSONAtom),
     atom_codes(JSONAtom, L),
-    phrase(json(Object), L),
-    print(Object).
+    phrase(json(Object), L), !. 
+    %print(Object).
+
 
 %%jsonaccess/3
-%jsonaccess(jsonobj(), field, out)
 
-jsonaccess(jsonobj(Members), [], jsonobj(Members)) :- !.
-jsonaccess(jsonobj([(X, Out) | _]), X, Out).
-jsonaccess(jsonobj([_ | Rest]), X, Out) :-
-    string(X),
-    jsonaccess(jsonobj(Rest), X, Out).
+% *
+jsonaccess(M, [], M) :-
+    !, M \= jsonarray(_).
 
-jsonaccess(jsonobj(Members), [X], Out) :-
-    jsonaccess(jsonobj(Members), X, Out).
+jsonaccess(M, F, Out) :-
+    F \= [_ | _],
+    jsonaccess(M, [F], Out).
 
-jsonaccess(jsonobj([(X, jsonarray([E | _])) | _]), [X, 0], E) :- !.
+% *
+jsonaccess(jsonobj([(F, Inner) | _]), [F], Inner).
 
-jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N], Out) :-
-    integer(N),
-    N \= 0,
-    N1 is N - 1,
-    access_array(Elements, N1, Out).
+jsonaccess(jsonobj([(F, Inner) | _]), [F | Fs], Out) :-
+    jsonaccess(Inner, Fs, Out), !.
 
-%%%access array of jsonobj
-jsonaccess(jsonobj([(X, jsonarray([E | _])) | _]), [X, 0, Val], Out) :-
-    jsonaccess(E, Val, Out),
-    !.
+jsonaccess(jsonobj([_ | Rest]), F, Out) :-
+    jsonaccess(jsonobj(Rest), F, Out).
 
-jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N, Val], Out) :-
-    N \= 0,
-    N1 is N -1,
-    access_array(Elements, N1, O),
-    jsonaccess(O, Val, Out).
-%%%end access array of jsonobj
+% *
+jsonaccess(jsonarray([E | _]), [0], E).
 
-jsonaccess(jsonobj([_ | Rest]), [X, N], Out) :-
-    string(X),
-    jsonaccess(jsonobj(Rest), [X , N], Out).
+jsonaccess(jsonarray([E | _]), [0 | Fs], Out) :-
+    !, jsonaccess(E, Fs, Out).
 
-jsonaccess(jsonobj([(X, jsonobj(Members)) | _ ]), [X, C], Out) :-
-    string(X),
-    jsonaccess(jsonobj(Members), C, Out).
+jsonaccess(jsonarray([_ | Elements]), [F | Fs], Out) :-
+    integer(F),
+    F1 is F - 1,
+    jsonaccess(jsonarray(Elements), [F1 | Fs], Out).
 
-%%access_array/3
+%%% * implementazione poco pulita a causa delle specifiche arbitrarie e poco chiare
+%%% * leggere "Validità di dettagli implementativi" sul forum studenti
+%%% red cut nel primo predicato
 
-access_array([E | _], 0, E) :- !.
+%%%% codice vecchio da cancellare -------------------------------
 
-access_array([_ | Elements], N, Out) :-
-    N1 is N - 1,
-    access_array(Elements, N1, Out).
+%% jsonaccess(jsonobj(Members), [], jsonobj(Members)) :- !.
+%% jsonaccess(jsonobj([(X, Out) | _]), X, Out).
+%% jsonaccess(jsonobj([_ | Rest]), X, Out) :-
+%%     string(X),
+%%     jsonaccess(jsonobj(Rest), X, Out).
+
+%% jsonaccess(jsonobj(Members), [X], Out) :-
+%%     jsonaccess(jsonobj(Members), X, Out).
+
+%% jsonaccess(jsonobj([(X, jsonarray([E | _])) | _]), [X, 0], E) :- !.
+
+%% jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N], Out) :-
+%%     integer(N),
+%%     N \= 0,
+%%     N1 is N - 1,
+%%     access_array(Elements, N1, Out).
+
+%% %%%access array of jsonobj
+%% jsonaccess(jsonobj([(X, jsonarray([E | _])) | _]), [X, 0, Val], Out) :-
+%%     jsonaccess(E, Val, Out),
+%%     !.
+
+%% jsonaccess(jsonobj([(X, jsonarray([_ | Elements])) | _]), [X, N, Val], Out) :-
+%%     N \= 0,
+%%     N1 is N - 1,
+%%     access_array(Elements, N1, O),
+%%     jsonaccess(O, Val, Out).
+%% %%%end access array of jsonobj
+
+%% jsonaccess(jsonobj([_ | Rest]), [X, N], Out) :-
+%%     string(X),
+%%     jsonaccess(jsonobj(Rest), [X , N], Out).
+
+%% jsonaccess(jsonobj([(X, jsonobj(Members)) | _ ]), [X, C], Out) :-
+%%     string(X),
+%%     jsonaccess(jsonobj(Members), C, Out).
+
+%% %%access_array/3
+
+%% access_array([E | _], 0, E) :- !.
+
+%% access_array([_ | Elements], N, Out) :-
+%%     N1 is N - 1,
+%%     access_array(Elements, N1, Out).
+
+%%%% codice vecchio da cancellare -------------------------------
 
 %%input e output
 %%jsonread/2
