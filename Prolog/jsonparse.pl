@@ -326,12 +326,13 @@ json_exponent('') --> [ ].
 % 1) ""
 % 2) '+'
 % 3) '-'
-% and parses by returning either an empty atom,
+% and parses by unifing with either an empty atom,
 % the atom '+' or the atom '-'
 
 json_sign('+') --> "+".
 json_sign('-') --> "-".
 json_sign('') --> [ ].
+
 
 %% json_characters//1
 % accumulates chars and returns the reverse of the accumulated chars
@@ -351,6 +352,23 @@ json_characters(A, Out) -->
     { reverse(A, Out) }.
 
 
+%% jsonparse/2
+% jsonparse(JSONString, Object)
+% parses a JSONString that can be either a prolg string or atom
+% it results true if it can be ?excorporatex? as a string, number 
+% or as the following terms:
+% Object = jsonobj(Members)
+% Object = jsonarray(Elements)
+% and recursively:
+% Members = [] or
+% Members = [Pair | MoreMembers]
+% Pair = (Attribute, Value)
+% Attribute = <SWI Prolog string>
+% Number = <SWI Prolog number>
+% Value = <SWI Prolog string> | Number | Object
+% Elements = [] or
+% Elements = [Value | MoreElements]
+
 jsonparse(JSONString, Object) :-
     string(JSONString),
     string_codes(JSONString, L),
@@ -364,7 +382,13 @@ jsonparse(JSONAtom, Object) :-
     %print(Object).
 
 
-%%jsonaccess/3
+%% jsonaccess/3
+% jsonaccess(JSONObject, Fields, Out)
+% where Fields = <SWI Prolog String>, Fields = <SWI Prolog Number> or Fields = [X | Xs]
+% and Xs can be empty
+% results true when you can obtain a value by following the
+% field trail presend in Fields starting from JSONObject,
+% and unifies it with Out
 
 % *
 jsonaccess(M, [], M) :-
@@ -394,9 +418,11 @@ jsonaccess(jsonarray([_ | Elements]), [F | Fs], Out) :-
     F1 is F - 1,
     jsonaccess(jsonarray(Elements), [F1 | Fs], Out).
 
-%%input e output
-%%jsonread/2
-%%jsonread(FileName, JSON)
+%% input e output
+%% jsonread/2
+% jsonread(FileName, JSON)
+% reads the contents of the file at FileName
+% (which is a path) and parses it in a JSONObject via jsonparse/2
 
 jsonread(FileName, JSONObj) :-
     open(FileName, read, In),
@@ -406,6 +432,10 @@ jsonread(FileName, JSONObj) :-
 
 
 %% jsonwrite/2
+% jsonwrite(JSONObj, FileName)
+% writes in the file, at the path FileName
+% (or creates it if it doesn't exist), JSONObj reverted in a json form
+
 jsonwrite(JSONObj, FileName) :-
     jsonencode(JSONObj, 0, Json),
     open(FileName, write, Out),
@@ -413,7 +443,8 @@ jsonwrite(JSONObj, FileName) :-
     close(Out).
     
 
-%%jsonencode/3
+%% jsonencode/3
+
 jsonencode([], _, "") :- !.
 
 jsonencode(jsonobj(I), Indent, Out) :-
@@ -461,6 +492,8 @@ jsonencode((X, Y), Indent, Out) :-
 
 jsonencode(X, _, Out) :- term_string(X, Out).
 
+%% addtab/2
+
 addtab(0, "") :- !.
 
 addtab(Indent, Out1) :-
@@ -475,3 +508,4 @@ addtab(Indent, Out1) :-
 
 %%%% domande
 %% vedere cosa fare per escape bisogna tecnicamente che funzionino solo gli escape definiti in http://json.org
+%%% end of file -- jsonparse.pl --
