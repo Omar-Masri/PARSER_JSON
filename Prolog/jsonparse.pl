@@ -68,7 +68,7 @@ json_obj(O) -->
 json_obj(O) -->
     "{",
     json_ws, json_members(I), json_ws,
-    "}",
+    "}", !,
     { O = jsonobj(I) }.
 
 
@@ -85,7 +85,7 @@ json_obj(O) -->
 
 json_members(O) -->
     json_member(I),
-    ",",
+    ",", !,
     json_members(Is),
     { append(I, Is, O) }.
 
@@ -259,7 +259,7 @@ json_digits(O) -->
 % and parses by returning the atom '0' if the string is of the form 1)
 % or by returning directly the output of json_onenine//1 if of form 2)
 
-json_digit('0') -->
+json_digit(0) -->
     "0", !.
 
 json_digit(O) -->
@@ -275,9 +275,9 @@ json_digit(O) -->
 % the ASCII value of the charachter and subtracting 48 from it
 
 json_one_nine(No) -->
-    [N],
+    [ N ],
     { N > 48, N < 58 },
-    { No is N - 48 }.
+    { No is N - 0'0 }.
 
 
 %% json_fraction//1
@@ -313,7 +313,7 @@ json_exponent(O) -->
     { atom_concat('E', I, Ii) }, { atom_concat(Ii, Is, O) }.
 
 json_exponent(O) -->
-    "e", json_sign(I), json_digits(Is),
+    "e", json_sign(I), json_digits(Is), !,
     { atom_concat('e', I, Ii) }, { atom_concat(Ii, Is, O) }.
 
 json_exponent('') --> [ ].
@@ -334,22 +334,73 @@ json_sign('-') --> "-".
 json_sign('') --> [ ].
 
 
-%% json_characters//1
+%% json_characters//2
 % accumulates chars and returns the reverse of the accumulated chars
-% the predicate avoids the ASCII code 34 (") and has a special case
-% for handling escape sequences
+% the predicate avoids the ASCII code 34 (") represented by 0'\"
+% (unless used in the escape sequence \")
+% and has a special case for handling escape sequences accepting
+% only the ones defined in http://json.org
 
-json_characters(A, Out) -->
-    [92, Chr], !,
-    json_characters([Chr, 92 | A], Out).
+json_characters(A, O) -->
+    [ 0'\\ , 0'u ], !,
+    json_hex(H1), json_hex(H2), json_hex(H3), json_hex(H4),
+    json_characters([H4, H3, H2, H1, 0'u, 0'\\ | A], O).
 
-json_characters(A, Out) -->
-    [ C ], { C \= 34 }, !,
-    json_characters([C | A], Out).
+json_characters(A, O) -->
+    [ 0'\\ ], !, json_escape(E),
+    json_characters([E, 0'\\ | A], O).
 
-json_characters(A, Out) -->
+json_characters(A, O) -->
+    [ C ], { C \= 0'\" }, !,
+    json_characters([C | A], O).
+
+json_characters(A, O) -->
     [ ],
-    { reverse(A, Out) }.
+    { reverse(A, O) }.
+
+
+%% json_escape//1
+% Defines escape nonterminal
+% as per definition found in http://json.org
+% sign is defined as being either:
+% 1) '"'
+% 2) '\'
+% 3) '/'
+% 4) 'b'
+% 5) 'f'
+% 6) 'n'
+% 7) 'r'
+% 8) 't'
+% 9) 'u' hex hex hex hex
+
+json_escape(0'\") --> [ 0'\" ], !.
+json_escape(0'\\) --> [ 0'\\ ], !.
+json_escape(0'/) --> [ 0'/ ], !.
+json_escape(0'b) --> [ 0'b ], !.
+json_escape(0'f) --> [ 0'f ], !.
+json_escape(0'n) --> [ 0'n ], !.
+json_escape(0'r) --> [ 0'r ], !.
+json_escape(0't) --> [ 0't ], !.
+
+%% json_hex//1
+% Defines hex nonterminal
+% as per definition found in http://json.org
+% hex is defined as being:
+% 1) digit
+% 2) 'A' . 'F'
+% 2) 'a' . 'f'
+% and parses by returning the char of the hex digit
+
+json_hex(H) -->
+    json_digit(O), { H is O + 0'0 }.
+
+json_hex(H) -->
+    [ H ],
+    { H > 64, H < 71 }.
+
+json_hex(H) -->
+    [ H ],
+    { H > 96, H < 103 }.
 
 
 %% jsonparse/2
@@ -441,7 +492,13 @@ jsonwrite(JSONObj, FileName) :-
     open(FileName, write, Out),
     write(Out, Json),
     close(Out).
-    
+
+%for formatting 
+concatenate(StringList, Res) :-
+    maplist(atom_chars, StringList, Lists),
+    append(Lists, List),
+    atom_chars(StringResult, List),
+    atom_string(StringResult, Res).
 
 %% jsonencode/3
 
@@ -451,46 +508,37 @@ jsonencode(jsonobj(I), Indent, Out) :-
     integer(Indent),
     IncrementedIndent is Indent + 1,
     jsonencode(I, IncrementedIndent, O1),
-    addtab(IncrementedIndent, Tab),
-    addtab(Indent, Tab1),
-    string_concat("{\n", Tab, Prev),
-    string_concat(Prev, O1, O2),
-    string_concat("\n", Tab1, Prev1),
-    string_concat(Prev1, "}", Next),
-    string_concat(O2, Next, Out), !.
+    addtab(Indent, Tab),
+    concatenate(["{\n", Tab, "\t", O1, "\n", Tab, "}"], Out), !.
 
 jsonencode(jsonarray(I), Indent, Out) :-
-    In is Indent + 1,
-    jsonencode(I, In, O1),
-    addtab(In, Tab),
-    addtab(Indent, Tab1),
-    string_concat("[\n", Tab, Prev),
-    string_concat(Prev, O1, O2),
-    string_concat("\n", Tab1, Mid),
-    string_concat(Mid, "]", Next),
-    string_concat(O2, Next, Out), !.
+    integer(Indent),
+    IncrementedIndent is Indent + 1,
+    jsonencode(I, IncrementedIndent, O1),
+    addtab(Indent, Tab),
+    concatenate(["[\n", Tab, "\t", O1, "\n", Tab, "]"], Out), !.
 
 jsonencode([X | []], Indent, Out) :-
-    jsonencode(X, Indent, Out), 
-    !.
+    jsonencode(X, Indent, Out), !.
 
 jsonencode([X | Xs], Indent, Out) :-
     jsonencode(X, Indent, O1),
-    addtab(Indent, Tab),
-    string_concat(",\n", Tab, Mid),
-    string_concat(O1, Mid, O2), 
     jsonencode(Xs, Indent, O3),
-    string_concat(O2, O3, Out), !.
+    addtab(Indent, Tab),
+    concatenate([O1, ",\n", Tab, O3], Out), !.
 
 
 jsonencode((X, Y), Indent, Out) :-
     jsonencode(X, Indent, XEncoded),
-    string_concat(XEncoded, " : ", O1),
     jsonencode(Y, Indent, O2),
-    string_concat(O1, O2, Out),
-    !.
+    concatenate([XEncoded, " : ", O2], Out), !.
 
-jsonencode(X, _, Out) :- term_string(X, Out).
+jsonencode(X, _, Out) :-
+    string(X),
+    concatenate(["\"", X, "\""], Out), !.
+
+jsonencode(X, _, Out) :-
+    term_string(X, Out).
 
 %% addtab/2
 
@@ -508,4 +556,11 @@ addtab(Indent, Out1) :-
 
 %%%% domande
 %% vedere cosa fare per escape bisogna tecnicamente che funzionino solo gli escape definiti in http://json.org
+%% si puo' usare reverse?
+%% e' ammissibile usare or in dcg | e or in generale ;
+%% bug term_string
+%% fai domanda su performance e ripetizione codice
+%% chiedi per specifica di jsonacces strana
+%% chiedi se si puo' usare maplist
+%% chiedi al prof stano comportamento di term_string
 %%% end of file -- jsonparse.pl --
