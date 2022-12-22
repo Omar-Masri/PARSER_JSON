@@ -39,7 +39,7 @@ jsonparse(JSONAtom, Object) :-
 
 
 %% json_ws//0
-% Skips whitespaces (ws) as their defined in http://json.org
+% Skips whitespaces (ws) as their defined in json.org
 % Skips ASCII code 32 - space
 % Skips ASCII code 10 - line feed (LF)
 % Skips ASCII code 13 - carriage return (CR)
@@ -56,7 +56,7 @@ json_ws -->
 
 %% json//1
 % Defines json nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 
 json(O) -->
     json_element(O).
@@ -64,7 +64,7 @@ json(O) -->
 
 %% json_value//1
 % Defines value nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % a value is defined as being either:
 % 1) object
 % 2) array
@@ -83,7 +83,7 @@ json_value(null) --> "null".
 
 %% json_obj//1
 % Defines object nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % an object is defined as being etheir:
 % 1) '{' ws '}'
 % 2) '{' members '}'
@@ -105,7 +105,7 @@ json_obj(O) -->
 
 %% json_members//1
 % Defines members nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % members is defined as being either:
 % 1) member
 % 2) member "," members
@@ -126,7 +126,7 @@ json_members(O) -->
 
 %% json_member//1
 % Defines member nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % member is defined as being:
 % 1) ws string ws ':' element
 % and parses by returning a list created with one tuple inside, where
@@ -146,7 +146,7 @@ json_member(O) -->
 
 %% json_array//1
 % Defines array nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % array is defined as being either:
 % 1) '[' ws ']' or
 % 2) '[' elements ']'
@@ -170,7 +170,7 @@ json_array(O) -->
 
 %% json_elements//1
 % Defines elements nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % elements is defined as being either:
 % 1) element
 % 2) element ',' elements
@@ -192,7 +192,7 @@ json_elements(O) -->
 
 %% json_element//1
 % Defines element nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % element is defined as being:
 % 1) ws value ws
 % and parses by returning directly the output of json_value//1
@@ -205,7 +205,7 @@ json_element(O) -->
 
 %% json_string//1
 % Defines string nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % string is defined as being:
 % 1) '"' characters '"'
 % and parses by getting the output of json_charachter//1
@@ -220,7 +220,7 @@ json_string(O) -->
 
 %% json_number//1
 % Defines number nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % number is defined as being:
 % 1) integer fraction exponent
 % and parses by concatenating the output atoms of
@@ -236,7 +236,7 @@ json_number(O) -->
 
 %% json_integer//1
 % Defines integer nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % integer is defined as being either:
 % 1) digit
 % 2) onenine digits
@@ -264,7 +264,7 @@ json_integer(O) -->
 
 %% json_digits//1
 % Defines digits nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % digits is defined as being either:
 % 1) digit
 % 2) digit digits
@@ -283,7 +283,7 @@ json_digits(O) -->
 
 %% json_digit//1
 % Defines digit nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % digit is defined as being either:
 % 1) '0'
 % 2) onenine
@@ -299,7 +299,7 @@ json_digit(O) -->
 
 %% json_one_nine//1
 % Defines onenine nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % onenine is defined as being:
 % 1) '0' . '9'
 % and parses by returning the number created by taking
@@ -313,7 +313,7 @@ json_one_nine(No) -->
 
 %% json_fraction//1
 % Defines fraction nonterminal
-% as per definition found in the http://json.org
+% as per definition found in the json.org
 % fraction is defined as being either:
 % 1) ""
 % 2) '.' digits
@@ -330,7 +330,7 @@ json_fraction('') --> [ ].
 
 %% json_exponent//1
 % Defines exponent nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % exponent is defined as being either:
 % 1) ""
 % 2) 'E' sign digits
@@ -352,7 +352,7 @@ json_exponent('') --> [ ].
 
 %% json_sign//1
 % Defines sign nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % sign is defined as being either:
 % 1) ""
 % 2) '+'
@@ -370,7 +370,7 @@ json_sign('') --> [ ].
 % the predicate avoids the ASCII code 34 (") represented by 0'\"
 % (unless used in the escape sequence \")
 % and has a special case for handling escape sequences accepting
-% only the ones defined in http://json.org
+% only the ones defined in json.org
 % it also handles the escape sequence \u hex hex hex hex directly
 
 json_characters(A, O) -->
@@ -393,7 +393,7 @@ json_characters(A, O) -->
 
 %% json_escape//1
 % Defines escape nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % sign is defined as being either:
 % 1) '"'
 % 2) '\'
@@ -416,7 +416,7 @@ json_escape(0't) --> [ 0't ], !.
 
 %% json_hex//1
 % Defines hex nonterminal
-% as per definition found in http://json.org
+% as per definition found in json.org
 % hex is defined as being:
 % 1) digit
 % 2) 'A' . 'F'
@@ -444,24 +444,22 @@ json_hex(H) -->
 % field trail presend in Fields starting from JSONObject,
 % and unifies it with "Out"
 
-% *
 jsonaccess(M, [], M) :-
     !, M \= jsonarray(_).
 
 jsonaccess(M, F, Out) :-
-    F \= [_ | _],
+    F \= [_ | _], !,
     jsonaccess(M, [F], Out).
 
-% *
 jsonaccess(jsonobj([(F, Inner) | _]), [F], Inner).
 
 jsonaccess(jsonobj([(F, Inner) | _]), [F | Fs], Out) :-
-    jsonaccess(Inner, Fs, Out), !.
+    Fs \= [],
+    jsonaccess(Inner, Fs, Out).
 
 jsonaccess(jsonobj([_ | Rest]), F, Out) :-
     jsonaccess(jsonobj(Rest), F, Out).
 
-% *
 jsonaccess(jsonarray([E | _]), [0], E).
 
 jsonaccess(jsonarray([E | _]), [0 | Fs], Out) :-
@@ -568,15 +566,5 @@ addtab(Indent, Out) :-
     addtab(NewIndent, Out1),
     string_concat(Out1, "\t", Out).
 
-%%% jsonparse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
-%%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
-
-%%%% domande
-%% vedere cosa fare per escape bisogna tecnicamente che funzionino solo gli escape definiti in http://json.org
-%% si puo' usare reverse?
-%% e' ammissibile usare or in dcg | e or in generale ;
-%% chiedi per specifica di jsonacces strana   ?????
-%% chiedi se si puo' usare maplist
-%% chiedi se pui dire che un predicato ritorna qualcosa
 
 %%% end of file -- jsonparse.pl --
