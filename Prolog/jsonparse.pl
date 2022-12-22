@@ -1,4 +1,6 @@
 %%%% -*- Mode: Prolog -*-
+%%% -- jsonparse.pl --
+
 
 %% Members:
 % Masri Omar 879237
@@ -6,9 +8,38 @@
 % Pirovano Diego 886009
 
 
+%% --------------------------- Jsonparse  ----------------------------
+
+%% jsonparse/2
+% jsonparse(JSONString, Object)
+% parses a JSONString that can be either a prolg string or atom
+% it results true if it can be ?excorporatex? as a string, number 
+% or as the following terms:
+% Object = jsonobj(Members)
+% Object = jsonarray(Elements)
+% and recursively:
+% Members = [] or
+% Members = [Pair | MoreMembers]
+% Pair = (Attribute, Value)
+% Attribute = <SWI Prolog string>
+% Number = <SWI Prolog number>
+% Value = <SWI Prolog string> | Number | Object
+% Elements = [] or
+% Elements = [Value | MoreElements]
+
+jsonparse(JSONString, Object) :-
+    string(JSONString),
+    string_codes(JSONString, L),
+    phrase(json(Object), L), !.
+
+jsonparse(JSONAtom, Object) :-
+    atom(JSONAtom),
+    atom_codes(JSONAtom, L),
+    phrase(json(Object), L), !.
+
+
 %% json_ws//0
 % Skips whitespaces (ws) as their defined in http://json.org
-%
 % Skips ASCII code 32 - space
 % Skips ASCII code 10 - line feed (LF)
 % Skips ASCII code 13 - carriage return (CR)
@@ -54,12 +85,12 @@ json_value(null) --> "null".
 % Defines object nonterminal
 % as per definition found in http://json.org
 % an object is defined as being etheir:
-% 1) '{' ws '}' or
+% 1) '{' ws '}'
 % 2) '{' members '}'
 % and parses by returning either the predicate:
 % jsonobj([]) if the string is of the form 1)
 % jsonobj([I]) if the string is of the form 2)
-% where "I" is the output of json_members//1
+% where I is the output of json_members//1
 
 json_obj(O) -->
     "{", json_ws, "}", !,
@@ -178,7 +209,7 @@ json_element(O) -->
 % string is defined as being:
 % 1) '"' characters '"'
 % and parses by getting the output of json_charachter//1
-% wich is a list and converts it to a string
+% wich is a list and converts into a string
 
 json_string(O) -->
     "\"",
@@ -208,23 +239,23 @@ json_number(O) -->
 % as per definition found in http://json.org
 % integer is defined as being either:
 % 1) digit
-% 2) onenine digit
+% 2) onenine digits
 % 3) '-' digit
-% 4) '-' onenine digit
+% 4) '-' onenine digits
 % and parses by concatenating the atoms returned from json_onenine//1
 % and json_digits//1 and eventually, if the string is of the
-% form 1) or 2), adding a minus at the start
+% form 3) or 4), adding a minus at the start
 
 json_integer(O) -->
     json_one_nine(I), json_digits(Is), !,
     {atom_concat(I, Is, O)}.
 
 json_integer(O) -->
-    "-", json_one_nine(I), json_digits(Is), !,
-    {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
+    json_digit(O), !.
 
 json_integer(O) -->
-    json_digit(O), !.
+    "-", json_one_nine(I), json_digits(Is), !,
+    {atom_concat(-, I, Ii)}, {atom_concat(Ii, Is, O)}.
 
 json_integer(O) -->
     "-", json_digit(I), !,
@@ -256,7 +287,7 @@ json_digits(O) -->
 % digit is defined as being either:
 % 1) '0'
 % 2) onenine
-% and parses by returning the atom '0' if the string is of the form 1)
+% and parses by returning 0 if the string is of the form 1)
 % or by returning directly the output of json_onenine//1 if of form 2)
 
 json_digit(0) -->
@@ -326,7 +357,7 @@ json_exponent('') --> [ ].
 % 1) ""
 % 2) '+'
 % 3) '-'
-% and parses by unifing with either an empty atom,
+% and parses by returning either an empty atom,
 % the atom '+' or the atom '-'
 
 json_sign('+') --> "+".
@@ -340,6 +371,7 @@ json_sign('') --> [ ].
 % (unless used in the escape sequence \")
 % and has a special case for handling escape sequences accepting
 % only the ones defined in http://json.org
+% it also handles the escape sequence \u hex hex hex hex directly
 
 json_characters(A, O) -->
     [ 0'\\ , 0'u ], !,
@@ -371,7 +403,6 @@ json_characters(A, O) -->
 % 6) 'n'
 % 7) 'r'
 % 8) 't'
-% 9) 'u' hex hex hex hex
 
 json_escape(0'\") --> [ 0'\" ], !.
 json_escape(0'\\) --> [ 0'\\ ], !.
@@ -381,6 +412,7 @@ json_escape(0'f) --> [ 0'f ], !.
 json_escape(0'n) --> [ 0'n ], !.
 json_escape(0'r) --> [ 0'r ], !.
 json_escape(0't) --> [ 0't ], !.
+
 
 %% json_hex//1
 % Defines hex nonterminal
@@ -402,44 +434,15 @@ json_hex(H) -->
     [ H ],
     { H > 96, H < 103 }.
 
-
-%% jsonparse/2
-% jsonparse(JSONString, Object)
-% parses a JSONString that can be either a prolg string or atom
-% it results true if it can be ?excorporatex? as a string, number 
-% or as the following terms:
-% Object = jsonobj(Members)
-% Object = jsonarray(Elements)
-% and recursively:
-% Members = [] or
-% Members = [Pair | MoreMembers]
-% Pair = (Attribute, Value)
-% Attribute = <SWI Prolog string>
-% Number = <SWI Prolog number>
-% Value = <SWI Prolog string> | Number | Object
-% Elements = [] or
-% Elements = [Value | MoreElements]
-
-jsonparse(JSONString, Object) :-
-    string(JSONString),
-    string_codes(JSONString, L),
-    phrase(json(Object), L), !.
-    %print(Object).
-
-jsonparse(JSONAtom, Object) :-
-    atom(JSONAtom),
-    atom_codes(JSONAtom, L),
-    phrase(json(Object), L), !. 
-    %print(Object).
-
+%% --------------------------- Jsonaccess  ---------------------------
 
 %% jsonaccess/3
 % jsonaccess(JSONObject, Fields, Out)
-% where Fields = <SWI Prolog String>, Fields = <SWI Prolog Number> or Fields = [X | Xs]
-% and Xs can be empty
+% where Fields = <SWI Prolog String>, Fields = <SWI Prolog Number>
+% or Fields = [X | Xs] and Xs can be empty
 % results true when you can obtain a value by following the
 % field trail presend in Fields starting from JSONObject,
-% and unifies it with Out
+% and unifies it with "Out"
 
 % *
 jsonaccess(M, [], M) :-
@@ -469,7 +472,8 @@ jsonaccess(jsonarray([_ | Elements]), [F | Fs], Out) :-
     F1 is F - 1,
     jsonaccess(jsonarray(Elements), [F1 | Fs], Out).
 
-%% input e output
+%% ------------------------ Input and Output  ------------------------
+
 %% jsonread/2
 % jsonread(FileName, JSON)
 % reads the contents of the file at FileName
@@ -485,7 +489,7 @@ jsonread(FileName, JSONObj) :-
 %% jsonwrite/2
 % jsonwrite(JSONObj, FileName)
 % writes in the file, at the path FileName
-% (or creates it if it doesn't exist), JSONObj reverted in a json form
+% JSONObj reverted in a json form via jsonencode/3
 
 jsonwrite(JSONObj, FileName) :-
     jsonencode(JSONObj, 0, Json),
@@ -493,14 +497,10 @@ jsonwrite(JSONObj, FileName) :-
     write(Out, Json),
     close(Out).
 
-%for formatting 
-concatenate(StringList, Res) :-
-    maplist(atom_chars, StringList, Lists),
-    append(Lists, List),
-    atom_chars(StringResult, List),
-    atom_string(StringResult, Res).
 
 %% jsonencode/3
+% jsonencode(JSONObj, Indent, Out)
+% reverts JSONObj parsed by jsonparse back to a JSON string
 
 jsonencode([], _, "") :- !.
 
@@ -540,16 +540,33 @@ jsonencode(X, _, Out) :-
 jsonencode(X, _, Out) :-
     term_string(X, Out).
 
+
+%% ------------------------ Utility predicates -----------------------
+
+%% concatenate/2
+% concatenate(StringList, Out)
+% takes a list of strings and returns in Out the concatenation
+% of those strings in the order they were found
+
+concatenate(StringList, Out) :-
+    maplist(atom_chars, StringList, Lists),
+    append(Lists, List),
+    atom_chars(StringResult, List),
+    atom_string(StringResult, Out).
+
+
 %% addtab/2
+% addtab(Indent, Out)
+% returns a string of n concatenated horizontal tab (HT)
+% where n = Indent and Indent has to be an Integer
 
 addtab(0, "") :- !.
 
-addtab(Indent, Out1) :-
-    integer(Indent),
-    Indent > 0,
+addtab(Indent, Out) :-
+    integer(Indent), Indent > 0,
     NewIndent is Indent - 1,
-    addtab(NewIndent, Out),
-    string_concat(Out, "\t", Out1).
+    addtab(NewIndent, Out1),
+    string_concat(Out1, "\t", Out).
 
 %%% jsonparse("{\"sasso\" : \"besugo\" ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\"]}}", O).
 %%% jsonparse('{\"sasso\" : 1.23 ,\"besugo\" : {\"sasso1\": [\"s\",\"gabibbo\u3A2f\"]}}', O).
@@ -558,9 +575,8 @@ addtab(Indent, Out1) :-
 %% vedere cosa fare per escape bisogna tecnicamente che funzionino solo gli escape definiti in http://json.org
 %% si puo' usare reverse?
 %% e' ammissibile usare or in dcg | e or in generale ;
-%% bug term_string
-%% fai domanda su performance e ripetizione codice
-%% chiedi per specifica di jsonacces strana
+%% chiedi per specifica di jsonacces strana   ?????
 %% chiedi se si puo' usare maplist
-%% chiedi al prof stano comportamento di term_string
+%% chiedi se pui dire che un predicato ritorna qualcosa
+
 %%% end of file -- jsonparse.pl --
