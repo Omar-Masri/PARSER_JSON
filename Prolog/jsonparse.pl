@@ -1,6 +1,6 @@
 %%%% -*- Mode: Prolog -*-
-%%% -- jsonparse.pl --
 
+%% -- jsonparse.pl --
 
 %% Members:
 % Masri Omar 879237
@@ -11,7 +11,7 @@
 %% --------------------------- Jsonparse  ----------------------------
 
 %% jsonparse/2
-% jsonparse(JSONString, Object)
+% jsonparse(++JSONString, -Object)
 % parses a JSONString that can be either a prolg string or atom
 % it results true if it can be ?excorporatex? as a string, number 
 % or as the following terms:
@@ -434,10 +434,11 @@ json_hex(H) -->
     [ H ],
     { H > 96, H < 103 }.
 
+
 %% --------------------------- Jsonaccess  ---------------------------
 
 %% jsonaccess/3
-% jsonaccess(JSONObject, Fields, Out)
+% jsonaccess(+JSONObject, +Fields, -Out)
 % where Fields = <SWI Prolog String>, Fields = <SWI Prolog Number>
 % or Fields = [X | Xs] and Xs can be empty
 % results true when you can obtain a value by following the
@@ -460,7 +461,7 @@ jsonaccess(jsonobj([(F, Inner) | _]), [F | Fs], Out) :-
 jsonaccess(jsonobj([_ | Rest]), F, Out) :-
     jsonaccess(jsonobj(Rest), F, Out).
 
-jsonaccess(jsonarray([E | _]), [0], E).
+jsonaccess(jsonarray([E | _]), [0], E) :- !.
 
 jsonaccess(jsonarray([E | _]), [0 | Fs], Out) :-
     !, jsonaccess(E, Fs, Out).
@@ -470,10 +471,11 @@ jsonaccess(jsonarray([_ | Elements]), [F | Fs], Out) :-
     F1 is F - 1,
     jsonaccess(jsonarray(Elements), [F1 | Fs], Out).
 
+
 %% ------------------------ Input and Output  ------------------------
 
 %% jsonread/2
-% jsonread(FileName, JSON)
+% jsonread(++FileName, -JSON)
 % reads the contents of the file at FileName
 % (which is a path) and parses it in a JSONObject via jsonparse/2
 
@@ -485,64 +487,62 @@ jsonread(FileName, JSONObj) :-
 
 
 %% jsonwrite/2
-% jsonwrite(JSONObj, FileName)
+% jsonwrite(+JSONObj, ++FileName)
 % writes in the file, at the path FileName
 % JSONObj reverted in a json form via jsonencode/3
 
 jsonwrite(JSONObj, FileName) :-
-    jsonencode(JSONObj, 0, Json),
+    jsonencode(JSONObj, "\t", Json),
     open(FileName, write, Out),
     write(Out, Json),
     close(Out).
 
 
 %% jsonencode/3
-% jsonencode(JSONObj, Indent, Out)
+% jsonencode(++JSONObj, ++Token,  -Out)
+%% jsonencode/4
+% jsonencode(++JSONObj, ++Acc, ++Token, -Out)
 % reverts JSONObj parsed by jsonparse back to a JSON string
 
-jsonencode([], _, "") :- !.
+jsonencode(JSONObj, Token, Out) :-
+    jsonencode(JSONObj, "", Token, Out).
 
-jsonencode(jsonobj(I), Indent, Out) :-
-    integer(Indent),
-    IncrementedIndent is Indent + 1,
-    jsonencode(I, IncrementedIndent, O1),
-    addtab(Indent, Tab),
-    concatenate(["{\n", Tab, "\t", O1, "\n", Tab, "}"], Out), !.
+jsonencode([], _, _, "") :- !.
 
-jsonencode(jsonarray(I), Indent, Out) :-
-    integer(Indent),
-    IncrementedIndent is Indent + 1,
-    jsonencode(I, IncrementedIndent, O1),
-    addtab(Indent, Tab),
-    concatenate(["[\n", Tab, "\t", O1, "\n", Tab, "]"], Out), !.
+jsonencode(jsonobj(I), Acc, Token, Out) :-
+    string_concat(Acc, Token, Tab),
+    jsonencode(I, Tab, Token, O1),
+    concatenate(["{\n", Acc, Token, O1, "\n", Acc, "}"], Out), !.
 
-jsonencode([X | []], Indent, Out) :-
-    jsonencode(X, Indent, Out), !.
+jsonencode(jsonarray(I), Acc, Token, Out) :-
+    string_concat(Acc, Token, Tab),
+    jsonencode(I, Tab, Token, O1),
+    concatenate(["[\n", Acc, Token, O1, "\n", Acc, "]"], Out), !.
 
-jsonencode([X | Xs], Indent, Out) :-
-    jsonencode(X, Indent, O1),
-    jsonencode(Xs, Indent, O3),
-    addtab(Indent, Tab),
-    concatenate([O1, ",\n", Tab, O3], Out), !.
+jsonencode([X], Acc, Token, Out) :-
+    jsonencode(X, Acc, Token, Out), !.
 
+jsonencode([X | Xs], Acc, Token, Out) :-
+    jsonencode(X, Acc, Token, O1),
+    jsonencode(Xs, Acc, Token, O2),
+    concatenate([O1, ",\n", Acc, O2], Out), !.
 
-jsonencode((X, Y), Indent, Out) :-
-    jsonencode(X, Indent, XEncoded),
-    jsonencode(Y, Indent, O2),
-    concatenate([XEncoded, " : ", O2], Out), !.
+jsonencode((X, Y), Acc, Token, Out) :-
+    jsonencode(X, Acc, Token, O1),
+    jsonencode(Y, Acc, Token, O2),
+    concatenate([O1, " : ", O2], Out), !.
 
-jsonencode(X, _, Out) :-
+jsonencode(X, _, _, Out) :-
     string(X),
     concatenate(["\"", X, "\""], Out), !.
 
-jsonencode(X, _, Out) :-
-    term_string(X, Out).
+jsonencode(X, _, _, X).
 
 
 %% ------------------------ Utility predicates -----------------------
 
 %% concatenate/2
-% concatenate(StringList, Out)
+% concatenate(++StringList, -Out)
 % takes a list of strings and returns in Out the concatenation
 % of those strings in the order they were found
 
@@ -553,18 +553,4 @@ concatenate(StringList, Out) :-
     atom_string(StringResult, Out).
 
 
-%% addtab/2
-% addtab(Indent, Out)
-% returns a string of n concatenated horizontal tab (HT)
-% where n = Indent and Indent has to be an Integer
-
-addtab(0, "") :- !.
-
-addtab(Indent, Out) :-
-    integer(Indent), Indent > 0,
-    NewIndent is Indent - 1,
-    addtab(NewIndent, Out1),
-    string_concat(Out1, "\t", Out).
-
-
-%%% end of file -- jsonparse.pl --
+%% end of file -- jsonparse.pl --
