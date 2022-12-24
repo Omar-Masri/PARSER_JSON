@@ -486,12 +486,12 @@ jsonread(FileName, JSONObj) :-
     jsonparse(JSON, JSONObj).
 
 
-%% jsonwrite/2
-% jsonwrite(+JSONObj, ++FileName)
+%% jsondump/2
+% jsondump(+JSONObj, ++FileName)
 % writes in the file, at the path FileName
 % JSONObj reverted in a json form via jsonencode/3
 
-jsonwrite(JSONObj, FileName) :-
+jsondump(JSONObj, FileName) :-
     jsonencode(JSONObj, "\t", Json),
     open(FileName, write, Out),
     write(Out, Json),
