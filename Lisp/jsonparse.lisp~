@@ -1,0 +1,19 @@
+;;;; -*- Mode: Lisp -*-
+;;; -- jsonparse.lisp --
+
+;;; ----- input e output -----
+
+(defun jsonread (filename)
+  (with-open-file (in 
+                   filename 
+                   :direction :input 
+                   :if-does-not-exist :error)
+   (readfile in)))
+
+(defun readfile (in) 
+  (let ((s (read in nil 'eof)))
+    (print s)
+    (cond ((not (eq s 'eof))) ((readfile in))
+         ((eq s 'eof)) ((print s)))))
+
+;;; end of file -- jsonparse.lisp --
