@@ -1,8 +1,47 @@
 ;;;; -*- Mode: Lisp -*-
 ;;; -- jsonparse.lisp --
 
-;;; ----- input e output -----
+;;; jsonparse/1
+;;; jsonparse(JSONString)
 
+;(defun jsonparse (JSONString) 
+;  (json JSONString))
+
+;(defun json (JSONString) (element JSONString resList))
+
+(defun ws-p (ch) 
+  (or (eql (char-code ch) 32)
+         (eql (char-code ch) 10)
+         (eql (char-code ch) 13)
+         (eql (char-code ch) 9)
+         ))
+
+(defun json-string (listch resList) 
+  (cond ((eql (char-code (first listch)) 34) (and (append resList (\")) (print resList))) 
+         ((and (eql (char-code (first listch)) 92) (eql (char-code (second listch)) 34)) 
+          (and (append resList (\\ \")) (json-string (rest (rest listch)) resList)))
+         (T (and (append resList (first listch)) (json-string (rest listch) resList)))
+))
+     
+;(defun value (listch resList)
+;  ((cond (eql (char-code (car listch)) 123) ((object (rest listch) resList))
+;         (eql (char-code (car listch)) 91) (array listch resList)
+;         (eql (char-code (car listch)) 34) (string listch resList)
+;         () ()
+;         () ()
+;         () ()
+;         () ()
+;         )))
+
+;;; controllare che in { ws } ws NON sia vuoto se no si rompe char-code
+;(defun object (listch resList) 
+;  ((if (and (ws (first listch)) (eql (char-code (second listch)) 125)) 
+;          (append resList ('JSONOBJ))
+;       (and (members (rest listch)(append resList ('JSONOBJ))) 
+;          (eql (char-code (first listch)) 125))
+;)))
+
+;;; ----- input e output -----
 
 ;;; jsonread/1
 ;;; jsonread(filename)
@@ -38,11 +77,11 @@
 (format out json)))
 
 
-(defun jsonencode (jsonobj s)
-  (cond ((string-equal (subseq jsonobj 0 9) "jsonobj([") (and (concatenate 'string s "{") (print (concatenate 'string "ciao" s)) (print jsonobj))) 
-        ((string-equal (subseq jsonobj 0 10) "jsonarray([") (concatenate 'string s "["))
-        ((else (and (concatenate 'string s) (print s) (print jsonobj))))
-))
+;(defun jsonencode (jsonobj s)
+;  (cond ((string-equal (subseq jsonobj 0 9) "jsonobj([") (and (concatenate 'string s "{") (print (concatenate 'string "ciao" s)) (print jsonobj))) 
+;        ((string-equal (subseq jsonobj 0 10) "jsonarray([") (concatenate 'string s "["))
+;        ((else (and (concatenate 'string s) (print s) (print jsonobj))))
+;))
 
 
 ;;; end of file -- jsonparse.lisp --

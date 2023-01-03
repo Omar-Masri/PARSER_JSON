@@ -9,14 +9,33 @@
 
 ;(defun json (JSONString) (element JSONString resList))
 
-(defun wsp (ch) 
-  (cond ((eql (char-code ch) 32))
-         ((eql (char-code ch) 10))
-         ((eql (char-code ch) 13))
-         ((eql (char-code ch) 9))
+(defun ws-p (ch) 
+  (or (eql (char-code ch) 32)
+         (eql (char-code ch) 10)
+         (eql (char-code ch) 13)
+         (eql (char-code ch) 9)
          ))
-           ;(eql char-code(ch) 0) (T)
-          
+
+;;; resList diventa una lista con dentro tutti i caratteri della stringa
+;;; (da convertire in stringa e appendere al risultato finale da chi l'ha chiamato)
+(defun json-string (listch resList) 
+  (cond ((null listch) (error "Invalid string"))
+        ((eql (char-code (first listch)) 34) (append resList '(#\"))) 
+        ((and (eql (char-code (first listch)) 92) (eql (char-code (second listch)) 34)) 
+         (json-string (rest (rest listch)) (append resList '(#\\ #\"))))
+        (T (json-string (rest listch) (append resList (cons (first listch) nil))))
+       
+))
+
+(defun json-number (listch resList) 
+  (cond ((and (> (char-code (first listch)) 47) (< (char-code (first listch)) 58)) 
+         (cond ((or (null (second listch)) (eql (char-code (second listch)) 44) (eql (char-code (second listch)) 125) (eql (char-code (second listch)) 93)) 
+                (append resList (cons (first listch) nil)))
+               (T (json-number (rest listch) (append resList (cons (first listch) nil))))))
+        (T (error "Invalid number"))
+))
+
+     
 ;(defun value (listch resList)
 ;  ((cond (eql (char-code (car listch)) 123) ((object (rest listch) resList))
 ;         (eql (char-code (car listch)) 91) (array listch resList)
@@ -69,13 +88,5 @@
                    :if-exists :supersede
                    :if-does-not-exist :create)
 (format out json)))
-
-
-;(defun jsonencode (jsonobj s)
-;  (cond ((string-equal (subseq jsonobj 0 9) "jsonobj([") (and (concatenate 'string s "{") (print (concatenate 'string "ciao" s)) (print jsonobj))) 
-;        ((string-equal (subseq jsonobj 0 10) "jsonarray([") (concatenate 'string s "["))
-;        ((else (and (concatenate 'string s) (print s) (print jsonobj))))
-;))
-
 
 ;;; end of file -- jsonparse.lisp --
