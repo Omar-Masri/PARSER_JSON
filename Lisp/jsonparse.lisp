@@ -1,8 +1,41 @@
 ;;;; -*- Mode: Lisp -*-
 ;;; -- jsonparse.lisp --
 
-;;; ----- input e output -----
+;;; jsonparse/1
+;;; jsonparse(JSONString)
 
+;(defun jsonparse (JSONString) 
+;  (json JSONString))
+
+;(defun json (JSONString) (element JSONString resList))
+
+(defun wsp (ch) 
+  (cond ((eql (char-code ch) 32))
+         ((eql (char-code ch) 10))
+         ((eql (char-code ch) 13))
+         ((eql (char-code ch) 9))
+         ))
+           ;(eql char-code(ch) 0) (T)
+          
+;(defun value (listch resList)
+;  ((cond (eql (char-code (car listch)) 123) ((object (rest listch) resList))
+;         (eql (char-code (car listch)) 91) (array listch resList)
+;         (eql (char-code (car listch)) 34) (string listch resList)
+;         () ()
+;         () ()
+;         () ()
+;         () ()
+;         )))
+
+;;; controllare che in { ws } ws NON sia vuoto se no si rompe char-code
+;(defun object (listch resList) 
+;  ((if (and (ws (first listch)) (eql (char-code (second listch)) 125)) 
+;          (append resList ('JSONOBJ))
+;       (and (members (rest listch)(append resList ('JSONOBJ))) 
+;          (eql (char-code (first listch)) 125))
+;)))
+
+;;; ----- input e output -----
 
 ;;; jsonread/1
 ;;; jsonread(filename)
