@@ -18,8 +18,9 @@
 
 (defun readfile (in res-string) 
   (let ((s (read-char in nil 'eof)))
-     (if (eq s 'eof) (print res-string) 
-       (readfile in (concatenate 'string res-string (list s))))))
+     (if (eq s 'eof) (print res-string)
+       (readfile in (concatenate 'string res-string (string s))))))
+       ;;;(readfile in (concatenate 'string res-string (list s))))))
 
 
 ;;; jsondump/1
@@ -35,5 +36,13 @@
                    :if-exists :supersede
                    :if-does-not-exist :create)
 (format out json)))
+
+
+;(defun jsonencode (jsonobj s)
+;  (cond ((string-equal (subseq jsonobj 0 9) "jsonobj([") (and (concatenate 'string s "{") (print (concatenate 'string "ciao" s)) (print jsonobj))) 
+;        ((string-equal (subseq jsonobj 0 10) "jsonarray([") (concatenate 'string s "["))
+;        ((else (and (concatenate 'string s) (print s) (print jsonobj))))
+;))
+
 
 ;;; end of file -- jsonparse.lisp --
