@@ -69,10 +69,9 @@
    (readfile in "")))
 
 (defun readfile (in res-string) 
-  (let ((s (read-char in nil 'eof)))
+  (let ((s (read-line in nil 'eof)))
      (if (eq s 'eof) (print res-string)
-       (readfile in (concatenate 'string res-string (string s))))))
-       ;;;(readfile in (concatenate 'string res-string (list s))))))
+       (readfile in (concatenate 'string res-string s (string #\Newline))))))
 
 
 ;;; jsondump/1
