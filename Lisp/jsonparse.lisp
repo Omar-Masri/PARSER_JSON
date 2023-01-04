@@ -54,6 +54,29 @@
 ;          (eql (char-code (first listch)) 125))
 ;)))
 
+;;; ----- jsonaccess -----
+(defun jsonaccess (json-obj &rest fields) 
+  (cond ((eql (length json-obj) 1)(error "no match: empty json"))
+        ((and (eql 'JSONOBJ (first json-obj)) (stringp (first fields)))
+         (if (equal(first (second json-obj)) (first fields))
+             (if (eql (length fields) 1) 
+                 (print (second (second json-obj)))
+               (apply #'jsonaccess (second (second json-obj)) (rest fields)))
+         (if (null (third json-obj)) 
+             (error "no match: key not found") 
+           (apply #'jsonaccess (remove (second json-obj) json-obj :count 1) fields))))
+        ((and (eql 'JSONARRAY (first json-obj)) (integerp (first fields)) (>= (first fields) 0))
+         (if (< (first fields) (- (length json-obj) 1)) 
+             (if (= (length fields) 1) 
+                 (print (nth (+ (first fields) 1) json-obj)) 
+               (apply #'jsonaccess (nth (+ (first fields) 1) json-obj) (rest fields))) 
+           (error "no match: index out of bound")))
+        (T (error "something went wrong!"))
+))
+
+
+
+
 ;;; ----- input e output -----
 
 ;;; jsonread/1
