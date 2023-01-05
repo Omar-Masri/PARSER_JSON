@@ -59,6 +59,17 @@
 (defun json-members (x)
   NIL)
 
+;; ----- numbers ------
+
+(defun json-string (json-input)
+  (let ((f (dcg-and json-input
+		    (list "\"" #'json-charachters "\""))))
+    (cond
+      ((car f)
+      (cons (car f) (first (second f)))))))
+
+;; ----- strings ------
+
 (defun json-string (json-input)
   (let ((f (dcg-and json-input
 		    (list "\"" #'json-charachters "\""))))
@@ -106,6 +117,7 @@
       (dcg-match e "t" :ret #\Tab)
       ))
 
+;;  ----------------- dcg stuff ------------------
 
 (defun dcg-and (json-input &optional l acc cut)
   (if (null json-input)

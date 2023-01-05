@@ -8,7 +8,7 @@
 % Pirovano Diego 886009
 
 
-%% --------------------------- Jsonparse  ----------------------------
+%% --------------------------- jsonparse -----------------------------
 
 %% jsonparse/2
 % jsonparse(++JSONString, -Object)
@@ -435,7 +435,7 @@ json_hex(H) -->
     { H > 96, H < 103 }.
 
 
-%% --------------------------- Jsonaccess  ---------------------------
+%% --------------------------- jsonaccess ----------------------------
 
 %% jsonaccess/3
 % jsonaccess(+JSONObject, +Fields, -Out)
@@ -472,7 +472,7 @@ jsonaccess(jsonarray([_ | Elements]), [F | Fs], Out) :-
     jsonaccess(jsonarray(Elements), [F1 | Fs], Out).
 
 
-%% ------------------------ Input and Output  ------------------------
+%% ------------------------ input and output  ------------------------
 
 %% jsonread/2
 % jsonread(++FileName, -JSON)
@@ -539,7 +539,7 @@ jsonencode(X, _, _, Out) :-
 jsonencode(X, _, _, X).
 
 
-%% ------------------------ Utility predicates -----------------------
+%% ------------------------ utility predicates -----------------------
 
 %% concatenate/2
 % concatenate(++StringList, -Out)
