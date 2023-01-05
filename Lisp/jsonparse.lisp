@@ -25,74 +25,78 @@
   (json-element json-input))
 
 (defun json-value (json-input)
-  (or (json-obj json-input)
-      (json-array json-input)
-      (json-string json-input)
-      (json-number json-input)
+  (or (dcg-handle json-input (list #'json-obj))
+      (dcg-handle json-input (list #'json-array))
+      (dcg-handle json-input (list #'json-string))
+      (dcg-handle json-input (list #'json-number))
       (dcg-match json-input "true" :ret "true")
       (dcg-match json-input "false" :ret "false")
       (dcg-match json-input "null" :ret "null")))
 
 
 (defun json-obj (json-input)
-  (or (let ((f (dcg-and json-input
-			(list "{" #'json-ws "}"))))
-	(cond
-	 ((car f)
-	  (cons (car f) '(JSONOBJ)))))
-      (let ((f (dcg-and json-input
-			(list "{" #'json-ws #'json-members #'json-ws
-			      "}"))))
-	(cond
-	 ((car f)
-	  (cons (car f) (append '(JSONOBJ)
-				(first (second f)))))))))
+  (or (dcg-handle json-input
+		  (list "{" #'json-ws "}")
+		  (lambda (f)
+		    '(JSONOBJ)))
+      (dcg-handle json-input
+		  (list "{" #'json-ws #'json-members #'json-ws
+			"}")
+		  (lambda (f)
+		    (append '(JSONOBJ)
+			    (second f))))))
 
 
 (defun json-element (json-input)
-  (let ((f (dcg-and json-input
-		    (list #'json-ws #'json-value #'json-ws))))
-    (cond
-     ((car f)
-      (cons (car f) (first (second f)))))))
+  (dcg-handle json-input
+		  (list #'json-ws #'json-value #'json-ws)))
 
-(defun json-members (x)
-  NIL)
+(defun json-members (json-input)
+  (or (dcg-handle json-input
+	      (list #'json-member "," #'dcg-cut #'json-members)
+	      (lambda (f)
+		(second f)))
+      (dcg-handle json-input
+		  (list #'json-member))))
+
+(defun json-member (json-input)
+  (or (dcg-handle json-input
+		  (list #'json-ws #'json-string #'json-ws ":"
+			#'json-ws #'json-value #'json-ws)
+		  (lambda (f)
+		    (second f)))))
+
+(defun json-array (x) NIL)
 
 ;; ----- numbers ------
 
 (defun json-number (json-input)
-  (let ((f (dcg-and json-input
-		    (list #'json-integer #'json-fraction #'json-exponent))))
-    (cond
-      ((car f)
-       (list (car f) (eval (read-from-string (lis-str (second f)))))))))
+  (dcg-handle json-input
+	      (list #'json-integer #'json-fraction #'json-exponent)
+	      (lambda (f)
+		(eval (read-from-string (lis-str (second f)))))))
 
 (defun json-fraction (json-input)
   (let ((m (dcg-match json-input ".")))
     (if (null m)
 	(list json-input "")
-      (let ((f (dcg-and (first m)
-			(list #'json-digits))))
-	(cond
-	 ((car f)
-	  (list (car f)
-		(concatenate 'string
-			     "."
-			     (first (second f))))))))))
+      (dcg-handle (first m)
+		  (list #'json-digits)
+		  (lambda (f)
+		    (concatenate 'string
+				 "."
+				 (first (second f))))))))
 
 (defun json-exponent (json-input)
   (let ((m (dcg-match json-input "e" :ignore-case T)))
     (if (null m)
 	(list json-input "")
-      (let ((f (dcg-and (first m)
-			(list #'json-sign #'json-digits))))
-	(cond
-	 ((car f)
-	  (list (car f)
-		(concatenate 'string
+	(dcg-handle (first m)
+		  (list #'json-sign #'json-digits)
+		  (lambda (f)
+		    (concatenate 'string
 			     "e"
-			     (lis-str (second f))))))))))
+			     (lis-str (second f))))))))
 (defun json-sign (e)
   (or (dcg-match e "+")
       (dcg-match e "-")
@@ -103,25 +107,22 @@
   (let ((m (dcg-match json-input "-")))
     (if (null m)
 	(json-integer-h json-input)
-      (let ((f (json-integer-h (first m))))
-	(cond
-	 ((car f)
-	  (list (car f)
-		(concatenate 'string
+	(dcg-handle (first m)
+		  (list #'json-integer-h)
+		  (lambda (f)
+		    (concatenate 'string
 			     "-"
-			     (second f)))))))))
+			     (second f)))))))
 
 (defun json-integer-h (json-input)
-  (or (let ((f (dcg-and json-input
-			(list #'json-onenine #'json-digits))))
-	(cond
-	 ((car f)
-	  (list (car f) (lis-str (second f))))))
-      (let ((f (dcg-and json-input
-			 (list #'json-digit))))
-	 (cond
-	  ((car f)
-	   (list (car f) (lis-str (second f))))))))
+  (or (dcg-handle json-input
+		  (list #'json-onenine #'json-digits)
+		  (lambda (f)
+		    (lis-str (second f))))
+      (dcg-handle json-input
+		  (list #'json-digit)
+		  (lambda (f)
+		    (lis-str (second f))))))
 
 (defun json-digit (json-input)
   (or (dcg-match json-input "0")
@@ -136,25 +137,20 @@
 	  (list (subseq json-input 1) (string f)))))))
 
 (defun json-digits (json-input)
-  (or (let ((f (dcg-and json-input
-			(list #'json-digit #'json-digits))))
-	(cond
-	 ((car f)
-	  (list (car f) (lis-str (second f))))))
-      (let ((f (dcg-and json-input (list #'json-digit))))
-	(cond
-	 ((car f)
-	  (list (car f) (lis-str (second f))))))
-      ))
+  (or (dcg-handle json-input
+		  (list #'json-digit #'json-digits)
+		  (lambda (f)
+		    (lis-str (second f))))
+      (dcg-handle json-input
+		  (list #'json-digit)
+		  (lambda (f)
+		    (lis-str (second f))))))
 
 ;; ----- strings ------
 
 (defun json-string (json-input)
-  (let ((f (dcg-and json-input
-		    (list "\"" #'json-charachters "\""))))
-    (cond
-      ((car f)
-      (cons (car f) (first (second f)))))))
+  (dcg-handle json-input
+		  (list "\"" #'json-charachters "\"")))
 
 (defun json-charachters (json-input)
   (let ((f (json-charachters-h json-input)))
@@ -210,7 +206,8 @@
 			  (dcg-and (car c)
 				   (rest l)
 				   (append acc
-					   (and (second c) (list (second c))))
+					   (and (second c)
+						(list (second c))))
 				   (or cut
 				       (third c)))
 			(dcg-and c
@@ -230,9 +227,23 @@
 	(cond
 	 ((equal (if (null ignore-case)
 		     x
-		   (string-upcase x)) (if (null ignore-case) y (string-upcase y)))
+		   (string-upcase x)) (if (null ignore-case)
+		   y
+		   (string-upcase y)))
 	  (list (subseq json-input l)
 		(or ret y)))))))))
+
+(defun dcg-handle (json-input l
+			      &optional
+			      (fun (lambda (f)
+				     (first (second f)))))
+  (let ((f (dcg-and json-input l)))
+    (cond
+     ((car f)
+      (list (car f)
+	    (funcall fun f)))
+     ((third f)
+      (list NIL)))))
 
 (defun dcg-cut (json-input) (list json-input NIL T))
 
