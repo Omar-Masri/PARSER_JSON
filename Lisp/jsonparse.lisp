@@ -59,6 +59,96 @@
 (defun json-members (x)
   NIL)
 
+;; ----- numbers ------
+
+(defun json-number (json-input)
+  (let ((f (dcg-and json-input
+		    (list #'json-integer #'json-fraction #'json-exponent))))
+    (cond
+      ((car f)
+       (list (car f) (eval (read-from-string (lis-str (second f)))))))))
+
+(defun json-fraction (json-input)
+  (let ((m (dcg-match json-input ".")))
+    (if (null m)
+	(list json-input "")
+      (let ((f (dcg-and (first m)
+			(list #'json-digits))))
+	(cond
+	 ((car f)
+	  (list (car f)
+		(concatenate 'string
+			     "."
+			     (first (second f))))))))))
+
+(defun json-exponent (json-input)
+  (let ((m (dcg-match json-input "e" :ignore-case T)))
+    (if (null m)
+	(list json-input "")
+      (let ((f (dcg-and (first m)
+			(list #'json-sign #'json-digits))))
+	(cond
+	 ((car f)
+	  (list (car f)
+		(concatenate 'string
+			     "e"
+			     (lis-str (second f))))))))))
+(defun json-sign (e)
+  (or (dcg-match e "+")
+      (dcg-match e "-")
+      (dcg-match e "")
+      ))
+
+(defun json-integer (json-input)
+  (let ((m (dcg-match json-input "-")))
+    (if (null m)
+	(json-integer-h json-input)
+      (let ((f (json-integer-h (first m))))
+	(cond
+	 ((car f)
+	  (list (car f)
+		(concatenate 'string
+			     "-"
+			     (second f)))))))))
+
+(defun json-integer-h (json-input)
+  (or (let ((f (dcg-and json-input
+			(list #'json-onenine #'json-digits))))
+	(cond
+	 ((car f)
+	  (list (car f) (lis-str (second f))))))
+      (let ((f (dcg-and json-input
+			 (list #'json-digit))))
+	 (cond
+	  ((car f)
+	   (list (car f) (lis-str (second f))))))))
+
+(defun json-digit (json-input)
+  (or (dcg-match json-input "0")
+      (json-onenine json-input)))
+
+(defun json-onenine (json-input)
+  (if (string= "" json-input)
+      NIL
+      (let ((f (char json-input 0)))
+	(cond
+	 ((< 48 (char-code f) 58) 
+	  (list (subseq json-input 1) (string f)))))))
+
+(defun json-digits (json-input)
+  (or (let ((f (dcg-and json-input
+			(list #'json-digit #'json-digits))))
+	(cond
+	 ((car f)
+	  (list (car f) (lis-str (second f))))))
+      (let ((f (dcg-and json-input (list #'json-digit))))
+	(cond
+	 ((car f)
+	  (list (car f) (lis-str (second f))))))
+      ))
+
+;; ----- strings ------
+
 (defun json-string (json-input)
   (let ((f (dcg-and json-input
 		    (list "\"" #'json-charachters "\""))))
@@ -106,6 +196,7 @@
       (dcg-match e "t" :ret #\Tab)
       ))
 
+;;  ----------------- dcg stuff ------------------
 
 (defun dcg-and (json-input &optional l acc cut)
   (if (null json-input)
@@ -131,17 +222,23 @@
 			   acc
 			   cut)))))))
 
-(defun dcg-match (json-input y &key ret)
+(defun dcg-match (json-input y &key ret ignore-case)
   (let ((l (length y)))
     (cond
      ((>= (length json-input) l)
-      (cond
-       ((equal (subseq json-input 0 l) y)
-	(list (subseq json-input l) (or ret y))))))))
+      (let ((x (subseq json-input 0 l)))
+	(cond
+	 ((equal (if (null ignore-case)
+		     x
+		   (string-upcase x)) (if (null ignore-case) y (string-upcase y)))
+	  (list (subseq json-input l)
+		(or ret y)))))))))
 
 (defun dcg-cut (json-input) (list json-input NIL T))
 
-(defun dcg-or (x) (if (null (car x)) NIL x))
+;; ------ utility ------
+
+(defun lis-str (l) (reduce (lambda (x y) (concatenate 'string x y)) l))
 
 ;; (defun json-number (listch resList) 
 ;;   (cond ((and (> (char-code (first listch)) 47) (< (char-code (first listch)) 58)) 
