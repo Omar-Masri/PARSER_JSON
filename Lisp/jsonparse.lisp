@@ -1,7 +1,6 @@
 ;;;; -*- Mode: Lisp -*-
 ;;; -- jsonparse.lisp --
 
-
 ;;; --------------------------- jsonparse ----------------------------
 
 (defun jsonparse (json-input)
@@ -283,55 +282,47 @@
 
 (defun flatten-l (l) (if (null l) nil (cons (car l) (flatten-l (second l)))))
 
-;; (defun json-number (listch resList) 
-;;   (cond ((and (> (char-code (first listch)) 47) (< (char-code (first listch)) 58)) 
-;;          (cond ((or (null (second listch)) (eql (char-code (second listch)) 44) (eql (char-code (second listch)) 125) (eql (char-code (second listch)) 93)) 
-;;                 (append resList (cons (first listch) nil)))
-;;                (T (json-number (rest listch) (append resList (cons (first listch) nil))))))
-;;         (T (error "Invalid number"))
-;; ))
-
-
-					;(defun value (listch resList)
-					;  ((cond (eql (char-code (car listch)) 123) ((object (rest listch) resList))
-					;         (eql (char-code (car listch)) 91) (array listch resList)
-					;         (eql (char-code (car listch)) 34) (string listch resList)
-					;         () ()
-					;         () ()
-					;         () ()
-					;         () ()
-					;         )))
-
-;;; controllare che in { ws } ws NON sia vuoto se no si rompe char-code
-					;(defun object (listch resList) 
-					;  ((if (and (ws (first listch)) (eql (char-code (second listch)) 125)) 
-					;          (append resList ('JSONOBJ))
-					;       (and (members (rest listch)(append resList ('JSONOBJ))) 
-					;          (eql (char-code (first listch)) 125))
-					;)))
 
 ;;; ----- jsonaccess -----
-(defun jsonaccess (json-obj &rest fields) 
-  (cond ((eql (length json-obj) 1)(error "no match: empty json"))
-        ((and (eql 'JSONOBJ (first json-obj)) (stringp (first fields)))
-         (if (equal(first (second json-obj)) (first fields))
-             (if (eql (length fields) 1) 
-                 (second (second json-obj))
-               (apply #'jsonaccess (second (second json-obj)) (rest fields)))
-         (if (null (third json-obj)) 
-             (error "no match: key not found") 
-           (apply #'jsonaccess (remove (second json-obj) json-obj :count 1) fields))))
-        ((and (eql 'JSONARRAY (first json-obj)) (integerp (first fields)) (>= (first fields) 0))
-         (if (< (first fields) (- (length json-obj) 1)) 
-             (if (= (length fields) 1) 
-                 (nth (+ (first fields) 1) json-obj) 
-               (apply #'jsonaccess (nth (+ (first fields) 1) json-obj) (rest fields))) 
-           (error "no match: index out of bound")))
-        (T (error "something went wrong!"))
-))
-
-
-
+(defun jsonaccess (json-obj &rest fields)
+  (cond
+   ((eql (length json-obj)
+	 1)
+    (error "no match: empty json"))
+   ((and (eql 'JSONOBJ
+	      (first json-obj))
+	 (stringp (first fields)))
+    (if (equal (first (second json-obj)) (first fields))
+	(if (eql (length fields)
+		 1)
+	    (second (second json-obj))
+	  (apply #'jsonaccess
+		 (second (second json-obj))
+		 (rest fields)))
+      (if (null (third json-obj))
+	  (error "no match: key not found")
+	(apply #'jsonaccess
+	       (remove (second json-obj)
+		       json-obj
+		       :count 1)
+	       fields))))
+   ((and (eql 'JSONARRAY
+	      (first json-obj))
+	 (integerp (first fields))
+	 (>= (first fields) 0))
+    (if (< (first fields) (- (length json-obj)
+			     1))
+	(if (= (length fields) 1)
+	    (nth (+ (first fields)
+		    1)
+		 json-obj)
+	  (apply #'jsonaccess
+		 (nth (+ (first fields)
+			 1)
+		      json-obj)
+		 (rest fields)))
+      (error "no match: index out of bound")))
+   (T (error "something went wrong!"))))
 
 ;;; ----- input e output -----
 
@@ -347,7 +338,7 @@
 
 (defun readfile (in res-string) 
   (let ((s (read-line in nil 'eof)))
-     (if (eq s 'eof) (print res-string)
+     (if (eq s 'eof) (jsonparse res-string)
        (readfile in (concatenate 'string res-string s (string #\Newline))))))
 
 ;;;(readfile in (concatenate 'string res-string (list s))))))
@@ -370,24 +361,66 @@
 ; 1 jsonobj
 ; 2 jsonarray
 
-(defun jsonencode (parsed-json type) 
-  (cond ((zerop type)
-             (cond ((not (listp parsed-json)) 
-                     parsed-json)
-                   ((eql 'JSONOBJ (first parsed-json))
-                    (concatenate 'string "{" (string #\Newline) (jsonencode (rest parsed-json) 1) (string #\Newline) "}" (string #\Newline)))
-                   ((eql 'JSONARRAY (first parsed-json))
-                    (concatenate 'string "[" (string #\Newline) (jsonencode (rest parsed-json) 2) (string #\Newline) "]" (string #\Newline)))
-                   ))
-        ((= type 1) (if (null (rest parsed-json))
-                        (concatenate 'string (string #\") (first (first parsed-json)) (string #\") " : " 
-                         (get-element-obj parsed-json))
-                      (concatenate 'string (string #\") (first (first parsed-json)) (string #\") " : " (get-element-obj parsed-json) "," (string #\Newline) (jsonencode (rest parsed-json) 1))))
-        ((= type 2) (if (null (rest parsed-json)) 
-                        (get-element-arr parsed-json)
-                      (concatenate 'string (get-element-arr parsed-json) "," (string #\Newline) (jsonencode (rest parsed-json) 2))))
-        
-))
+(defun jsonencode (parsed-json type)
+  (cond
+   ((zerop type)
+    (cond
+     ((not (listp parsed-json)) parsed-json)
+     ((eql 'JSONOBJ
+	   (first parsed-json))
+      (concatenate 'string
+		   "{"
+		   (string #\Newline)
+		   (jsonencode (rest parsed-json)
+			       1)
+		   (string #\Newline)
+		   "}"
+		   (string #\Newline)))
+     ((eql 'JSONARRAY
+	   (first parsed-json))
+      (concatenate 'string
+		   "["
+		   (string #\Newline)
+		   (jsonencode (rest parsed-json)
+			       2)
+		   (string #\Newline)
+		   "]"
+		   (string #\Newline)))))
+   ((= type 1)
+    (if (null (rest parsed-json))
+	(concatenate 'string
+		     (string #\")
+		     (first (first parsed-json))
+		     (string #\")
+		     " 
+(first (first parsed-json))
+(string #\")
+" 
+		     " : "
+		     (get-element-obj parsed-json))
+      (concatenate 'string
+		   (string #\")
+		   (first (first parsed-json))
+		   (string #\")
+		   " 
+(first (first parsed-json))
+(string #\")
+" 
+		   " : "
+		   (get-element-obj parsed-json)
+		   ","
+		   (string #\Newline)
+		   (jsonencode (rest parsed-json)
+			       1))))
+   ((= type 2)
+    (if (null (rest parsed-json))
+	(get-element-arr parsed-json)
+      (concatenate 'string
+		   (get-element-arr parsed-json)
+		   ","
+		   (string #\Newline)
+		   (jsonencode (rest parsed-json)
+			       2))))))
 
 (defun get-element-obj (parsed-json) 
   (if (listp (second (first parsed-json))) 
