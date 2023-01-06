@@ -6,7 +6,8 @@
 
 (defun jsonparse (json-input)
   (if (stringp json-input)
-      (json json-input)
+      (let ((j (json json-input)))
+	(if (null j) (error "ERROR: syntax error") (second j)))
     (error "ERROR: json only accepts strings")))
 
 (defun json-ws (json-input)
@@ -22,7 +23,8 @@
 	  json-input))))
 
 (defun json (json-input)
-  (json-element json-input))
+  (let ((j (json-element json-input)))
+  (if (string= "" (car j)) j NIL)))
 
 (defun json-value (json-input)
   (or (dcg-handle json-input (list #'json-obj))
@@ -44,7 +46,7 @@
 			"}")
 		  (lambda (f)
 		    (append '(JSONOBJ)
-			    (second f))))))
+			    (flatten-l (first (second f))))))))
 
 
 (defun json-element (json-input)
@@ -57,16 +59,42 @@
 	      (lambda (f)
 		(second f)))
       (dcg-handle json-input
-		  (list #'json-member))))
+		  (list #'json-member) (lambda (f)
+		    (second f)))))
 
 (defun json-member (json-input)
-  (or (dcg-handle json-input
+  (dcg-handle json-input
 		  (list #'json-ws #'json-string #'json-ws ":"
 			#'json-ws #'json-value #'json-ws)
 		  (lambda (f)
+		    (second f))))
+
+(defun json-array (json-input)
+  (or (dcg-handle json-input
+		  (list "[" #'json-ws "]")
+		  (lambda (f)
+		    '(JSONARRAY)))
+      (dcg-handle json-input
+		  (list "[" #'json-ws #'json-elements #'json-ws
+			"]")
+		  (lambda (f)
+		    (append '(JSONARRAY)
+			    (flatten-l (first (second f))))))))
+
+(defun json-elements (json-input)
+  (or (dcg-handle json-input
+	      (list #'json-element "," #'dcg-cut #'json-elements)
+	      (lambda (f)
+		(second f)))
+      (dcg-handle json-input
+		  (list #'json-element) (lambda (f)
 		    (second f)))))
 
-(defun json-array (x) NIL)
+(defun json-element (json-input)
+  (dcg-handle json-input
+		  (list #'json-ws #'json-value #'json-ws)
+		  (lambda (f)
+		    (first (second f)))))
 
 ;; ----- numbers ------
 
@@ -190,6 +218,7 @@
       (dcg-match e "n" :ret #\Linefeed)
       (dcg-match e "r" :ret #\Return)
       (dcg-match e "t" :ret #\Tab)
+      (dcg-match e "u" :ret #\u)
       ))
 
 ;;  ----------------- dcg stuff ------------------
@@ -205,9 +234,8 @@
 		      (if (consp c)
 			  (dcg-and (car c)
 				   (rest l)
-				   (append acc
-					   (and (second c)
-						(list (second c))))
+				   (append-e acc
+					   (second c))
 				   (or cut
 				       (third c)))
 			(dcg-and c
@@ -251,6 +279,10 @@
 
 (defun lis-str (l) (reduce (lambda (x y) (concatenate 'string x y)) l))
 
+(defun append-e (l e) (if (null e) l (append l (list e))))
+
+(defun flatten-l (l) (if (null l) nil (cons (car l) (flatten-l (second l)))))
+
 ;; (defun json-number (listch resList) 
 ;;   (cond ((and (> (char-code (first listch)) 47) (< (char-code (first listch)) 58)) 
 ;;          (cond ((or (null (second listch)) (eql (char-code (second listch)) 44) (eql (char-code (second listch)) 125) (eql (char-code (second listch)) 93)) 
@@ -293,7 +325,7 @@
 (defun readfile (in res-string)
   (let ((s (read-char in nil 'eof)))
     (if (eq s 'eof)
-	(print res-string)
+	(jsonparse res-string)
       (readfile in
 		(concatenate 'string
 			     res-string
