@@ -310,6 +310,29 @@
 					;          (eql (char-code (first listch)) 125))
 					;)))
 
+;;; ----- jsonaccess -----
+(defun jsonaccess (json-obj &rest fields) 
+  (cond ((eql (length json-obj) 1)(error "no match: empty json"))
+        ((and (eql 'JSONOBJ (first json-obj)) (stringp (first fields)))
+         (if (equal(first (second json-obj)) (first fields))
+             (if (eql (length fields) 1) 
+                 (second (second json-obj))
+               (apply #'jsonaccess (second (second json-obj)) (rest fields)))
+         (if (null (third json-obj)) 
+             (error "no match: key not found") 
+           (apply #'jsonaccess (remove (second json-obj) json-obj :count 1) fields))))
+        ((and (eql 'JSONARRAY (first json-obj)) (integerp (first fields)) (>= (first fields) 0))
+         (if (< (first fields) (- (length json-obj) 1)) 
+             (if (= (length fields) 1) 
+                 (nth (+ (first fields) 1) json-obj) 
+               (apply #'jsonaccess (nth (+ (first fields) 1) json-obj) (rest fields))) 
+           (error "no match: index out of bound")))
+        (T (error "something went wrong!"))
+))
+
+
+
+
 ;;; ----- input e output -----
 
 ;;; jsonread/1
@@ -322,14 +345,10 @@
 		      :if-does-not-exist :error)
 		  (readfile in "")))
 
-(defun readfile (in res-string)
-  (let ((s (read-char in nil 'eof)))
-    (if (eq s 'eof)
-	(jsonparse res-string)
-      (readfile in
-		(concatenate 'string
-			     res-string
-			     (string s))))))
+(defun readfile (in res-string) 
+  (let ((s (read-line in nil 'eof)))
+     (if (eq s 'eof) (print res-string)
+       (readfile in (concatenate 'string res-string s (string #\Newline))))))
 
 ;;;(readfile in (concatenate 'string res-string (list s))))))
 
@@ -346,4 +365,37 @@
 		       :if-does-not-exist :create)
 		  (format out json)))
 
+;;;type:
+; 0 neutral
+; 1 jsonobj
+; 2 jsonarray
+
+(defun jsonencode (parsed-json type) 
+  (cond ((zerop type)
+             (cond ((not (listp parsed-json)) 
+                     parsed-json)
+                   ((eql 'JSONOBJ (first parsed-json))
+                    (concatenate 'string "{" (string #\Newline) (jsonencode (rest parsed-json) 1) (string #\Newline) "}" (string #\Newline)))
+                   ((eql 'JSONARRAY (first parsed-json))
+                    (concatenate 'string "[" (string #\Newline) (jsonencode (rest parsed-json) 2) (string #\Newline) "]" (string #\Newline)))
+                   ))
+        ((= type 1) (if (null (rest parsed-json))
+                        (concatenate 'string (string #\") (first (first parsed-json)) (string #\") " : " 
+                         (get-element-obj parsed-json))
+                      (concatenate 'string (string #\") (first (first parsed-json)) (string #\") " : " (get-element-obj parsed-json) "," (string #\Newline) (jsonencode (rest parsed-json) 1))))
+        ((= type 2) (if (null (rest parsed-json)) 
+                        (get-element-arr parsed-json)
+                      (concatenate 'string (get-element-arr parsed-json) "," (string #\Newline) (jsonencode (rest parsed-json) 2))))
+        
+))
+
+(defun get-element-obj (parsed-json) 
+  (if (listp (second (first parsed-json))) 
+      (jsonencode (second (first parsed-json)) 0) 
+    (write-to-string (jsonencode (second (first parsed-json)) 0))))
+
+(defun get-element-arr (parsed-json) 
+  (if (listp (first parsed-json)) 
+      (jsonencode (first parsed-json) 0) 
+    (write-to-string (jsonencode (first parsed-json) 0))))
 ;;; end of file -- jsonparse.lisp --
