@@ -1,4 +1,0 @@
-{
-	"Pippo":"pluto",
-	"sass":"besugo"
-}
