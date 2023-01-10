@@ -362,21 +362,58 @@
 ; 2 jsonarray
 
 (defun jsonencode (parsed-json type) 
-  (cond ((zerop type)
+  (cond    
+    ((zerop type)
              (cond ((not (listp parsed-json)) 
-                     parsed-json)
+                    parsed-json)
+		   ((and (eql 'JSONOBJ (first parsed-json))
+			 (null(rest parsed-json)))
+			 "{}")
+		    ((and (eql'JSONARRAY (first parsed-json))
+			 (null(rest parsed-json)))
+			 "[]")
                    ((eql 'JSONOBJ (first parsed-json))
-                    (concatenate 'string "{" (string #\Newline) (jsonencode (rest parsed-json) 1) (string #\Newline) "}" (string #\Newline)))
+                    (concatenate 'string
+				 "{"
+				 (string #\Newline)
+				 (jsonencode (rest parsed-json) 1)
+				 (string #\Newline)
+				 "}"
+				 (string #\Newline)))
                    ((eql 'JSONARRAY (first parsed-json))
-                    (concatenate 'string "[" (string #\Newline) (jsonencode (rest parsed-json) 2) (string #\Newline) "]" (string #\Newline)))
+                    (concatenate 'string
+				 "["
+				 (string #\Newline)
+				 (jsonencode (rest parsed-json) 2)
+				 (string #\Newline)
+				 "]"
+				 (string #\Newline)))
                    ))
-        ((= type 1) (if (null (rest parsed-json))
-                        (concatenate 'string (string #\") (first (first parsed-json)) (string #\") " : " 
-                         (get-element-obj parsed-json))
-                      (concatenate 'string (string #\") (first (first parsed-json)) (string #\") " : " (get-element-obj parsed-json) "," (string #\Newline) (jsonencode (rest parsed-json) 1))))
-        ((= type 2) (if (null (rest parsed-json)) 
-                        (get-element-arr parsed-json)
-                      (concatenate 'string (get-element-arr parsed-json) "," (string #\Newline) (jsonencode (rest parsed-json) 2))))
+        ((= type 1)
+	 (if (null (rest parsed-json))
+	     (concatenate 'string
+			  (string #\")
+			  (first (first parsed-json))
+			  (string #\")
+			  " : " 
+			  (get-element-obj parsed-json))
+	     (concatenate 'string
+			  (string #\")
+			  (first (first parsed-json))
+			  (string #\")
+			  " : "
+			  (get-element-obj parsed-json)
+			  ","
+			  (string #\Newline)
+			  (jsonencode (rest parsed-json) 1))))
+        ((= type 2)
+	 (if (null (rest parsed-json)) 
+	     (get-element-arr parsed-json)
+	     (concatenate 'string
+			  (get-element-arr parsed-json)
+			  ","
+			  (string #\Newline)
+			  (jsonencode (rest parsed-json) 2))))
         
 ))
 
