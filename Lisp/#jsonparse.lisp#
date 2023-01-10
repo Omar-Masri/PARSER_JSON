@@ -30,10 +30,9 @@
       (dcg-handle json-input (list #'json-array))
       (dcg-handle json-input (list #'json-string))
       (dcg-handle json-input (list #'json-number))
-      (dcg-match json-input "true" :ret 'true)
-      (dcg-match json-input "false" :ret 'false)
-      (dcg-match json-input "null" :ret 'null)))
-
+      (dcg-match json-input "true" :ret "true")
+      (dcg-match json-input "false" :ret "false")
+      (dcg-match json-input "null" :ret "null")))
 
 (defun json-obj (json-input)
   (or (dcg-handle json-input

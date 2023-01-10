@@ -1,0 +1,7 @@
+{
+    "a": true,
+    "b": [193.42e-4, "a b c",[false]],
+    "a\"b\"c": " ciao",
+    "c": false,
+    "d": null
+}
