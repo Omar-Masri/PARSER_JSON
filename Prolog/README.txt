@@ -28,3 +28,25 @@ jsondump/2: jsondump(JSONObject, Filename) converts JSONObject back into a stand
 and overwrites it into the "Filename" file or creates it if it does not exist, 
 the conversion is achieved via the "jsonencode/3" predicate.
 We also implemented the standard json tabulation when writing in the file.
+
+Examples:
+
+jsonparse("{
+	\"besugo\":1,
+	\"trota\":[
+        {\"salmone\":[[0,12e2],[4]]},
+		{\"merluzzo\":[[true],[null, 14.2e3]]}]
+}", Out).
+
+jsonparse("\"storione \\\t acciuga \"", Out).
+
+
+jsonparse("{
+	\"besugo\":1,
+	\"trota\":[
+        {\"salmone\":[[0,12e2],[4]]},
+		{\"merluzzo\":[[true],[null, 14.2e3]]}]}", Out), jsonaccess(Out, ["trota",1,"merluzzo",1,1], Res).
+
+
+jsonparse("{\"besugo\":1, \"trota\":[ {\"salmone\":[[0,12e2],[4]]},
+{\"merluzzo\":[[true],[null, 14.2e3]]}]}", Out), jsondump(Out, "out.txt").
