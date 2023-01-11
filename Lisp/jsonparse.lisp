@@ -82,7 +82,7 @@
 
 (defun json-elements (json-input)
   (or (dcg-handle json-input
-		  (list #'json-element "," #'dcg-cut #'json-elements)
+		  (list #'json-element "," #'json-elements)
 		  (lambda (f)
 		    (second f)))
       (dcg-handle json-input
@@ -134,12 +134,9 @@
   (let ((m (dcg-match json-input "-")))
     (if (null m)
 	(json-integer-h json-input)
-	(dcg-handle (first m)
-		    (list #'json-integer-h)
-		    (lambda (f)
-		      (concatenate 'string
-				   "-"
-				   (second f)))))))
+	(let ((f (json-integer-h (first m))))
+	  (list (car f) (concatenate 'string "-" (second f)))
+	))))
 
 (defun json-integer-h (json-input)
   (or (dcg-handle json-input
@@ -149,7 +146,8 @@
       (dcg-handle json-input
 		  (list #'json-digit)
 		  (lambda (f)
-		    (lis-str (second f))))))
+		    (lis-str (second f))))
+      ""))
 
 (defun json-digit (json-input)
   (or (dcg-match json-input "0")
@@ -181,43 +179,41 @@
 
 (defun json-charachters (json-input)
   (let ((f (json-charachters-h json-input)))
-    (list (car f) (coerce (reverse (cdr f)) 'string))))
+    (if (= f -1) NIL (list (subseq json-input f) (subseq json-input 0 f)))))
 
-(defun json-charachters-h (json-input)
-  (or (let ((f (dcg-and json-input
-			(list "\\" #'dcg-cut #'json-escape ))))
-	(cond
-	  ((car f)
-	   (append (json-charachters-h (car f)) (second f)))
-	  ((third f)
-	   (list NIL))))
-      (let ((f (dcg-and json-input
-			(list #'json-char))))
-	(cond
-	  ((car f)
-	   (append (json-charachters-h (car f)) (second f)))
-	  ((third f)
-	   (list NIL))))
-      (list json-input)))
+(defun json-charachters-h (json-input &optional (n 0))
+  (let ((m (eq (json-char json-input n) #\\)))
+    (if (null m)
+	(let ((f (json-char json-input n)))
+	  (if
+	   f
+	   (json-charachters-h json-input (+ n 1))
+	   n))
+	(let ((f (json-escape (json-char json-input (+ n 1) T))))
+	  (if
+	   f
+	   (json-charachters-h json-input (+ n 2))
+	   -1))
+	)))
 
-(defun json-char (json-input)
-  (if (string= "" json-input)
+(defun json-char (json-input n &optional escape)
+  (if (<= (length json-input) n)
       NIL
-      (let ((f (char json-input 0)))
+      (let ((f (char json-input n)))
 	(cond
-	  ((char/= f #\") 
-	   (list (subseq json-input 1) f))))))
+	  ((or escape (char/= f #\"))
+	   f)))))
 
 (defun json-escape (e)
-  (or (dcg-match e "\"" :ret #\")
-      (dcg-match e "\\" :ret #\\)
-      (dcg-match e "/" :ret #\/) 
-      (dcg-match e "b" :ret #\Backspace) 
-      (dcg-match e "f" :ret #\Page)     
-      (dcg-match e "n" :ret #\Linefeed)
-      (dcg-match e "r" :ret #\Return)
-      (dcg-match e "t" :ret #\Tab)
-      (dcg-match e "u" :ret #\u)
+  (or (eq e #\")
+      (eq e #\\)
+      (eq e #\/)
+      (eq e #\b)
+      (eq e #\f)
+      (eq e #\n)
+      (eq e #\r)
+      (eq e #\t)
+      (eq e #\u)
       ))
 
 ;;  ----------------- dcg stuff ------------------
