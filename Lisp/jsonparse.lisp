@@ -1,7 +1,7 @@
 ;;;; -*- Mode: Lisp -*-
-;;; -- jsonparse.lisp --
+;;;; jsonparse.lisp
 
-;;; --------------------------- jsonparse ----------------------------
+;;;; jsonparse
 
 (defun jsonparse (json-input)
   (if (stringp json-input)
@@ -95,7 +95,7 @@
 	      (lambda (f)
 		(first (second f)))))
 
-;; ----- numbers ------
+;;;; numbers
 
 (defun json-number (json-input)
   (dcg-handle json-input
@@ -171,7 +171,7 @@
 		  (lambda (f)
 		    (lis-str (second f))))))
 
-;; ----- strings ------
+;;;; strings
 
 (defun json-string (json-input)
   (dcg-handle json-input
@@ -216,7 +216,7 @@
       (eq e #\u)
       ))
 
-;;  ----------------- dcg stuff ------------------
+;;;; dcg stuff
 
 (defun dcg-and (json-input &optional l acc cut)
   (if (null json-input)
@@ -270,16 +270,16 @@
 
 (defun dcg-cut (json-input) (list json-input NIL T))
 
-;; ------ utility ------
 
-(defun lis-str (l) (reduce (lambda (x y) (concatenate 'string x y)) l))
+;;;; jsonaccess
 
-(defun append-e (l e) (if (null e) l (append l (list e))))
+;;; jsonaccess(json-obj &rest fields)
+;;; function to access to a determinate value using the path specified by fields
+;;; the function generates an error if: 
+;;; 1) the json-obj is an empty json
+;;; 2) the path doesn't exist
+;;; 3) the path goes out of bound (for array)
 
-(defun flatten-l (l) (if (null l) nil (cons (car l) (flatten-l (second l)))))
-
-
-;;; ----- jsonaccess -----
 (defun jsonaccess (json-obj &rest fields)
   (cond
     ((eql (length json-obj)
@@ -320,12 +320,11 @@
 	 (error "no match: index out of bound")))
     (T (error "something went wrong!"))))
 
-;;; ----- input e output -----
+;;;; input e output
 
-;;; jsonread/1
 ;;; jsonread(filename)
-;;; read json file and print to screen for now
-;;; call jsonparse where is the print in readfile
+;;; read a json from the file "filename" and call the jsonparse function that
+;;; return the json in a parsed form that is easier to manipulate in Lisp
 
 (defun jsonread (filename)
   (with-open-file (in filename :direction :input
@@ -337,14 +336,10 @@
     (if (eq s 'eof) (jsonparse res-string)
 	(readfile in (concatenate 'string res-string s (string #\Newline))))))
 
-;;;(readfile in (concatenate 'string res-string (list s))))))
 
-
-;;; jsondump/1
 ;;; jsondump(JSON filename)
-;;; write the JSON passed into the file specified by the path filename
-;;; (IMPORTANT: ASK FOR EXAMPLE)
-;;; need implement the revert conversion from jsonobj to true json
+;;; write the JSON passed after calling the jsonencode function
+;;; into the file specified by the path filename
 
 (defun jsondump (json filename)
   (with-open-file (out filename :direction :output
@@ -352,10 +347,15 @@
 				:if-does-not-exist :create)
     (format out (jsonencode json 0))))
 
-;;;type:
-					; 0 neutral
-					; 1 jsonobj
-					; 2 jsonarray
+
+;;; jsonencode(parsed-json type)
+;;; reverts a JSONOBJ in a standard JSON
+;;; the field type is used for different situation, in particular:
+;;; 0 if it's not a list returns the value itself (parsed-json), 
+;;;   otherwise checks if it's a JSONOBJ or a JSONARRAY 
+;;;   and reacts accordingly 
+;;; 1 expects that parsed-json is the body of a JSONOBJ, so a list of lists
+;;; 2 expects that parsed-json is the body of a JSONARRAY, so a flat list
 
 (defun jsonencode (parsed-json type) 
   (cond    
@@ -411,13 +411,27 @@
 		      (string #\Newline)
 		      (jsonencode (rest parsed-json) 2))))))
 
+;;;; utility
+
+(defun lis-str (l) (reduce (lambda (x y) (concatenate 'string x y)) l))
+
+(defun append-e (l e) (if (null e) l (append l (list e))))
+
+(defun flatten-l (l) (if (null l) nil (cons (car l) (flatten-l (second l)))))
+
+
+;;; used to make the jsonencode code more readable
+
 (defun get-element-obj (parsed-json) 
   (if (listp (second (first parsed-json))) 
       (jsonencode (second (first parsed-json)) 0) 
       (write-to-string (jsonencode (second (first parsed-json)) 0))))
 
+;;; used to make the jsonencode code more readable
+
 (defun get-element-arr (parsed-json) 
   (if (listp (first parsed-json)) 
       (jsonencode (first parsed-json) 0) 
       (write-to-string (jsonencode (first parsed-json) 0))))
-;;; end of file -- jsonparse.lisp --
+
+;;;; end of file -- jsonparse.lisp --
