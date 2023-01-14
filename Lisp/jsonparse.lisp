@@ -50,16 +50,21 @@
 			"}")
 		  (lambda (f)
 		    (append '(JSONOBJ)
-			    (flatten-l (first (second f))))))))
+			     (first (second f)))))))
 
 (defun json-members (json-input)
-  (or (dcg-handle json-input
-		  (list #'json-member "," #'dcg-cut #'json-members)
-		  (lambda (f)
-		    (second f)))
-      (dcg-handle json-input
-		  (list #'json-member) (lambda (f)
-					 (second f)))))
+  (let ((f (dcg-handle json-input
+		       (list #'json-member))))
+    (if (null f)
+	nil
+      (let ((m (dcg-handle (car f)
+			       (list "," #'json-members)
+			       (lambda (g)
+				 (second g)))))
+	    (if (null m) (list (car f) (cdr f)) (list (car m)
+		  (append (cdr f)
+			  (first (second m)))))
+	  ))))
 
 (defun json-member (json-input)
   (dcg-handle json-input
@@ -80,16 +85,21 @@
 			"]")
 		  (lambda (f)
 		    (append '(JSONARRAY)
-			    (flatten-l (first (second f))))))))
+			    (first (second f)))))))
 
 (defun json-elements (json-input)
-  (or (dcg-handle json-input
-		  (list #'json-element "," #'dcg-cut #'json-elements)
-		  (lambda (f)
-		    (second f)))
-      (dcg-handle json-input
-		  (list #'json-element) (lambda (f)
-					  (second f)))))
+  (let ((f (dcg-handle json-input
+		       (list #'json-element))))
+    (if (null f)
+	nil
+      (let ((m (dcg-handle (car f)
+			       (list "," #'json-elements)
+			       (lambda (g)
+				 (second g)))))
+	    (if (null m) (list (car f) (cdr f)) (list (car m)
+		  (append (cdr f)
+			  (first (second m)))))
+	  ))))
 
 (defun json-element (json-input)
   (dcg-handle json-input
