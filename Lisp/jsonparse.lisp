@@ -55,13 +55,13 @@
 (defun json-members (json-input)
   (let ((f (dcg-handle json-input
 		       (list #'json-member))))
-    (if (null f)
+    (if (null (car f))
 	nil
       (let ((m (dcg-handle (car f)
 			   (list "," #'json-members)
 			   (lambda (g)
 			     (second g)))))
-	(if (null m)
+	(if (null (car m))
 	    (list (car f)
 		  (cdr f))
 	  (list (car m)
@@ -92,13 +92,13 @@
 (defun json-elements (json-input)
   (let ((f (dcg-handle json-input
 		       (list #'json-element))))
-    (if (null f)
+    (if (null (car f))
 	nil
       (let ((m (dcg-handle (car f)
 			   (list "," #'json-elements)
 			   (lambda (g)
 			     (second g)))))
-	(if (null m)
+	(if (null (car m))
 	    (list (car f)
 		  (cdr f))
 	  (list (car m)
@@ -360,7 +360,7 @@
     (format out (jsonencode json 0 1))))
 
 
-;;; jsonencode(parsed-json type)
+;;; jsonencode(parsed-json type tab)
 ;;; reverts a JSONOBJ in a standard JSON
 ;;; the field type is used for different situation, in particular:
 ;;; 0 if it's not a list returns the value itself (parsed-json), 
