@@ -6,10 +6,6 @@
 ;;; Piazza Lorenzo 886010
 ;;; Pirovano Diego 886009
 
-<<<<<<< HEAD
-=======
-
->>>>>>> newjsonelemets
 ;;;; -------------------------- jsonparse ----------------------------
 
 ;; JSONPARSE (json-input)
