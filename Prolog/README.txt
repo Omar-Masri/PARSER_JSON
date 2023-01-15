@@ -29,6 +29,10 @@ and overwrites it into the "Filename" file or creates it if it does not exist,
 the conversion is achieved via the "jsonencode/3" predicate.
 We also implemented the standard json tabulation when writing in the file.
 
+-------
+scrivere che riconosce \u unicode
+-------
+
 Examples:
 
 jsonparse("{
