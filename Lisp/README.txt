@@ -7,6 +7,10 @@ Pirovano Diego: 886009
 
 Goal: create a json parser implementation using lisp.
 
+Style:
+we tried to write the code to be as close to the grammar laid down in json.org
+as to make the code more readable
+
 end-user functions:
 
 jsonread: jsonread(Filename) opens the file "filename" and tries to create a parsed json

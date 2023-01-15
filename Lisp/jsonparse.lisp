@@ -1,5 +1,5 @@
-;;;;; -*- Mode: Lisp -*-
-;;;;; jsonparse.lisp
+;;;; -*- Mode: Lisp -*-
+;;;; jsonparse.lisp
 
 ;;;; Members:
 ;;; Masri Omar 879237
@@ -8,7 +8,7 @@
 
 ;;;; -------------------------- jsonparse ----------------------------
 
-;; JSONPARSE (json-input)
+;;; JSONPARSE (json-input)
 ;; if the JSON structure in "json-input" is valid it returns the
 ;; parsed result if it's not generates an error ("ERROR: syntax error");
 ;; the function only accepts strings
@@ -21,7 +21,7 @@
 	    (second j)))
       (error "ERROR: json only accepts strings")))
 
-;; JSON-WS (json-input)
+;;; JSON-WS (json-input)
 ;; Skips whitespaces (ws) as their defined in json.org
 ;; #\Space #\Newline #\Return #\Tab
 
@@ -36,14 +36,14 @@
 	    (json-ws (subseq json-input 1))
 	    json-input))))
 
-;; JSON (json-input)
+;;; JSON (json-input)
 ;; Defines json nonterminal
 
 (defun json (json-input)
   (let ((j (json-element json-input)))
     (if (string= "" (car j)) j NIL)))
 
-;; JSON-VALUE (json-input)
+;;; JSON-VALUE (json-input)
 ;; Defines value nonterminal
 ;; in the case of true false and null
 ;; and parses by returning the related symbol
@@ -59,7 +59,7 @@
 
 ;;; ---------- Objects ----------
 
-;; JSON-OBJ (json-input)
+;;; JSON-OBJ (json-input)
 ;; Defines object nonterminal
 
 (defun json-obj (json-input)
@@ -74,7 +74,7 @@
 		    (append '(JSONOBJ)
 			    (first (second f)))))))
 
-;; JSON-MEMBERS (json-input)
+;;; JSON-MEMBERS (json-input)
 ;; Defines members nonterminal
 ;; since json-member is always done no matter the choice
 ;; we chose to do it always saving valuable time that would have been
@@ -96,7 +96,7 @@
 		    (append (cdr f)
 			    (first (second m)))))))))
 
-;; JSON-MEMBERS(json-input)
+;;; JSON-MEMBERS(json-input)
 ;; Defines member nonterminal
 
 (defun json-member (json-input)
@@ -108,7 +108,7 @@
 
 ;;; ---------- Arrays -----------
 
-;; JSON-ARRAY (json-input)
+;;; JSON-ARRAY (json-input)
 ;; Defines array nonterminal
 
 (defun json-array (json-input)
@@ -122,7 +122,7 @@
 		  (lambda (f)
 		    (append '(JSONARRAY)
 			    (first (second f)))))))
-;; JSON-ELEMENTS (json-input)
+;;; JSON-ELEMENTS (json-input)
 ;; Defines elements nonterminal
 ;; since json-element is always done no matter the choice
 ;; we chose to do it always saving valuable time that would have been
@@ -144,7 +144,7 @@
 		    (append (cdr f)
 			    (first (second m)))))))))
 
-;; JSON-ELEMENT (json-input)
+;;; JSON-ELEMENT (json-input)
 ;; Defines element nonterminal
 
 (defun json-element (json-input)
@@ -155,7 +155,7 @@
 
 ;;; --------- Numbers -----------
 
-;; JSON-NUMBER (json-input)
+;;; JSON-NUMBER (json-input)
 ;; Defines number nonterminal
 
 (defun json-number (json-input)
@@ -164,7 +164,7 @@
 	      (lambda (f)
 		(eval (read-from-string (lis-str (second f)))))))
 
-;; JSON-FRACTION (json-input)
+;;; JSON-FRACTION (json-input)
 ;; Defines fraction nonterminal
 
 (defun json-fraction (json-input)
@@ -178,7 +178,7 @@
 				   "."
 				   (first (second f))))))))
 
-;; JSON-EXPONENT (json-input)
+;;; JSON-EXPONENT (json-input)
 ;; Defines exponent nonterminal
 
 (defun json-exponent (json-input)
@@ -192,7 +192,7 @@
 				   "e"
 				   (lis-str (second f))))))))
 
-;; JSON-SIGN (json-input)
+;;; JSON-SIGN (json-input)
 ;; Defines sign nonterminal
 
 (defun json-sign (e)
@@ -200,7 +200,7 @@
       (dcg-match e "-")
       (dcg-match e "")))
 
-;; JSON-INTEGER (json-input)
+;;; JSON-INTEGER (json-input)
 ;; Defines integer nonterminal
 
 (defun json-integer (json-input)
@@ -227,14 +227,14 @@
 		  (lambda (f)
 		    (lis-str (second f))))))
 
-;; JSON-DIGIT (json-input)
+;;; JSON-DIGIT (json-input)
 ;; Defines digit nonterminal
 
 (defun json-digit (json-input)
   (or (dcg-match json-input "0")
       (json-onenine json-input)))
 
-;; JSON-ONENINE (json-input)
+;;; JSON-ONENINE (json-input)
 ;; Defines onenine nonterminal
 
 (defun json-onenine (json-input)
@@ -247,7 +247,7 @@
 	   (list (subseq json-input 1)
 		 (string f)))))))
 
-;; JSON-DIGITS (json-input)
+;;; JSON-DIGITS (json-input)
 ;; Defines digits nonterminal
 
 (defun json-digits (json-input)
@@ -262,14 +262,14 @@
 
 ;;; --------- Strings -----------
 
-;; JSON-STRING (json-input)
+;;; JSON-STRING (json-input)
 ;; Defines string nonterminal
 
 (defun json-string (json-input)
   (dcg-handle json-input
 	      (list "\"" #'json-charachters "\"")))
 
-;; JSON-CHARACHTERS (json-input)
+;;; JSON-CHARACHTERS (json-input)
 ;; Defines charachters nonterminal
 
 (defun json-charachters (json-input)
@@ -297,7 +297,7 @@
 	   -1))
 	)))
 
-;; JSON-CHAR (json-input n &optional esc)
+;;; JSON-CHAR (json-input n &optional esc)
 ;; Defines character nonterminal
 ;; the optional esc flag is used to make the json-char accept
 ;; all char even #\" it is used for the escape \"
@@ -310,7 +310,7 @@
 	  ((or esc
 	       (char/= f #\")) f)))))
 
-;; JSON-ESCAPE (e)
+;;; JSON-ESCAPE (e)
 ;; Defines escape nonterminal
 
 (defun json-escape (e)
@@ -318,9 +318,9 @@
       (eq e #\b) (eq e #\f) (eq e #\n)
       (eq e #\r) (eq e #\t) (eq e #\u)))
 
-;;; ----------- DCG -------------
+;;;; ---------------------------- DCG --------------------------------
 
-;; DCG-AND (json-input &optional l acc)
+;;; DCG-AND (json-input &optional l acc)
 ;; function used to emulate the functioning of ands in
 ;; Definite clause grammars in prolog, it is also of note that since
 ;; it's one of the most used functions in the program we decided
@@ -347,7 +347,7 @@
 			       (rest l)
 			       acc)))))))
 
-;; DCG-MATCH (json-input y &key ret ignore-case)
+;;; DCG-MATCH (json-input y &key ret ignore-case)
 ;; function used to match the string y to the first substring
 ;; of json-input and in the case of a match returns a list with json string
 ;; without the first matched string and the matched string  
@@ -364,7 +364,7 @@
 	    (list (subseq json-input l)
 		  (or ret y)))))))))
 
-;; DCG-handle (json-input &optional (fun (lambda (f) (first (second f)))))
+;;; DCG-handle (json-input &optional (fun (lambda (f) (first (second f)))))
 ;; used to handle DCG-AND by controlling if the and was successful
 ;; and calling a function to parse on the output
 
@@ -381,7 +381,7 @@
 
 ;;;; ------------------------- jsonaccess ----------------------------
 
-;; jsonaccess(json-obj &rest fields)
+;;; jsonaccess(json-obj &rest fields)
 ;; function to access to a determinate value using the path specified by fields
 ;; the function generates an error if: 
 ;; 1) the json-obj is an empty json
@@ -430,7 +430,7 @@
 
 ;;;; ----------------------- input and output ------------------------
 
-;; jsonread (filename)
+;;; jsonread (filename)
 ;; read a json from the file "filename" and call the jsonparse function that
 ;; return the json in a parsed form that is easier to manipulate in Lisp
 
@@ -445,7 +445,7 @@
 	(readfile in (concatenate 'string res-string s (string #\Newline))))))
 
 
-;; jsondump(JSON filename)
+;;; jsondump(JSON filename)
 ;; write the JSON passed after calling the jsonencode function
 ;; into the file specified by the path filename
 
@@ -456,7 +456,7 @@
     (format out (jsonencode json 0 1))))
 
 
-;; jsonencode(parsed-json type tab)
+;;; jsonencode(parsed-json type tab)
 ;; reverts a JSONOBJ in a standard JSON
 ;; the field type is used for different situation, in particular:
 ;; 0 if it's not a list returns the value itself (parsed-json), 
@@ -486,6 +486,9 @@
      (if (null (rest parsed-json)) 
 	 (get-element-arr parsed-json tab)
 	 (encode-rest parsed-json 2 tab)))))
+
+;; helper functions to JSONENCODE
+;; used to make code more readable
 
 (defun encode-obj-arr (parsed-json type tab)
   (concatenate 'string
@@ -539,10 +542,12 @@
 				    0
 				    tab)))))
 
+;; end of helper functions to JSONENCODE
+
 ;;; --------- utility -----------
 
 (defun lis-str (l) (reduce (lambda (x y) (concatenate 'string x y)) l))
 
 (defun append-e (l e) (if (null e) l (append l (list e))))
 
-;;;;; end of file -- jsonparse.lisp --
+;;;; end of file -- jsonparse.lisp --
