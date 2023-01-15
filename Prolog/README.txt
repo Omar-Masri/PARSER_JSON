@@ -23,11 +23,29 @@ We also managed HEX characters.
 jsonaccess/3: jsonaccess(JSONObject, Fields, Result) true if the trail (prolog list) of fields specified in "Fields" 
 trails you back to a valid value starting from "JSONObject" and unifies the result in "Result", 
 it's contemplated having in "Fields" a single string instead of a list of fields.
+If there is more than one match it unifies with all of them.
+E.g.) 
+
+?- jsonparse("{\"sogliola\":1,\"sogliola\": 2 }", Out), jsonaccess(Out, ["sogliola"], Res).
+
+Out = jsonobj([("sogliola", 1), ("sogliola", 2)]),
+Res = 1 ;
+Out = jsonobj([("sogliola", 1), ("sogliola", 2)]),
+Res = 2 ;
+false.
+
 
 jsondump/2: jsondump(JSONObject, Filename) converts JSONObject back into a standard JSON 
 and overwrites it into the "Filename" file or creates it if it does not exist, 
 the conversion is achieved via the "jsonencode/3" predicate.
-We also implemented the standard json tabulation when writing in the file.
+
+-------
+
+Extra-Features: 
+1) identification and handling of unicode escape \u hex hex hex hex
+2) formatting in jsondump, the output file jsondump/2 will be formatted in a more readable form.
+
+-------
 
 Examples:
 

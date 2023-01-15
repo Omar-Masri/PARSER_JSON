@@ -1,6 +1,3 @@
 {
-	"besugo":1,
-	"trota":[
-        {"salmone":[[0,12e2],[4]]},
-		{"merluzzo":[[true],[null, 14.2e3]]}]
+	"besugo":"\" shdjsh \t"
 }
