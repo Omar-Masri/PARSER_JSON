@@ -29,9 +29,15 @@ returns:
 
 jsondump: jsondump(Filename) converts JSONObject back into a standard JSON
 and overwrites it into the "Filename" file or creates it if it does not exist, 
-the conversion is achieved via the "jsonencode/2" predicate.
+the conversion is achieved via the "jsonencode" predicate.
 We didn't implement the json tabulation because of time constraints.
 
+-------------
+
+Extra-features:
+1) formatting in jsondump, the output file jsondump will be formatted in a more readable form.
+
+-------------
 
 Examples:
 

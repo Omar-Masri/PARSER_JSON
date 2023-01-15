@@ -530,7 +530,7 @@ jsonencode([X | Xs], Acc, Token, Out) :-
 jsonencode((X, Y), Acc, Token, Out) :-
     jsonencode(X, Acc, Token, O1),
     jsonencode(Y, Acc, Token, O2),
-    concatenate([O1, " : ", O2], Out), !.
+    concatenate([O1, ": ", O2], Out), !.
 
 jsonencode(X, _, _, Out) :-
     string(X),

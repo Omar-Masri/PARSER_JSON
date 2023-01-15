@@ -372,10 +372,8 @@
 (defun jsonencode (parsed-json type tab)
     (cond    
       ((zerop type)
-       (cond ((not (listp parsed-json)) 
-              (if (stringp parsed-json)
-		  (concatenate 'string "\"" parsed-json "\"")
-		  parsed-json))
+       (cond ((not (listp parsed-json))
+              parsed-json)
              ((eql 'JSONOBJ (first parsed-json))
 	      (if (null (rest parsed-json))
 		  "{}"
@@ -408,7 +406,7 @@
 	       "\""
 	       (first (first parsed-json))
 	       "\""
-	       " : "
+	       ": "
 	       (get-element-obj parsed-json tab)))
 
 (defun encode-rest (parsed-json type tab)
@@ -424,17 +422,20 @@
 ;;; used to make the jsonencode code more readable
 
 (defun get-element-obj (parsed-json tab) 
-  (if (listp (second (first parsed-json))) 
-      (jsonencode (second (first parsed-json)) 0 tab)
-       (jsonencode (second (first parsed-json)) 0 tab)))
+  (cond ((listp (second (first parsed-json))) 
+         (jsonencode (second (first parsed-json)) 0 tab))
+        ((stringp (second (first parsed-json))) (concatenate 'string "\"" (jsonencode (second (first parsed-json)) 0 tab) "\""))
+        (T (write-to-string (jsonencode (second (first parsed-json)) 0 tab)))
+))
 
 ;;; used to make the jsonencode code more readable
 
 (defun get-element-arr (parsed-json tab)
-  (if (listp (first parsed-json))
-      (jsonencode (first parsed-json) 0 tab)
-      (write-to-string (jsonencode (first parsed-json) 0 tab))))
-
+  (cond ((listp (first parsed-json)) 
+         (jsonencode (first parsed-json) 0 tab))
+        ((stringp (first parsed-json)) (concatenate 'string "\"" (jsonencode (first parsed-json) 0 tab) "\""))
+        (T (write-to-string (jsonencode (first parsed-json) 0 tab)))
+))
 ;;;; utility
 
 (defun lis-str (l) (reduce (lambda (x y) (concatenate 'string x y)) l))
