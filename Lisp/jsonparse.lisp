@@ -1,7 +1,7 @@
 ;;;; -*- Mode: Lisp -*-
 ;;;; jsonparse.lisp
 
-;;;; Members:
+;;;; Me-mbers:
 ;;; Masri Omar 879237
 ;;; Piazza Lorenzo 886010
 ;;; Pirovano Diego 886009
@@ -12,6 +12,13 @@
 ;; if the JSON structure in "json-input" is valid it returns the
 ;; parsed result if it's not generates an error ("ERROR: syntax error");
 ;; the function only accepts strings
+
+;; (defpackage :my-package
+;;    (:use :cl))
+
+;; (in-package :my-package)
+
+(declaim (optimize (debug 0) (safety 0) (speed 3)))
 
 (defun jsonparse (json-input)
   (if (stringp json-input)
@@ -49,10 +56,10 @@
 ;; and parses by returning the related symbol
 
 (defun json-value (json-input)
-  (or (dcg-handle json-input (list #'json-obj))
-      (dcg-handle json-input (list #'json-array))
-      (dcg-handle json-input (list #'json-string))
+  (or (dcg-handle json-input (list #'json-string))
       (dcg-handle json-input (list #'json-number))
+      (dcg-handle json-input (list #'json-obj))
+      (dcg-handle json-input (list #'json-array))
       (dcg-match json-input "true" :ret 'true)
       (dcg-match json-input "false" :ret 'false)
       (dcg-match json-input "null" :ret 'null)))
@@ -122,6 +129,7 @@
 		  (lambda (f)
 		    (append '(JSONARRAY)
 			    (first (second f)))))))
+
 ;;; JSON-ELEMENTS (json-input)
 ;; Defines elements nonterminal
 ;; since json-element is always done no matter the choice
